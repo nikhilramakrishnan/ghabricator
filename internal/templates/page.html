@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}}</title>
+  <link rel="stylesheet" href="{{.CSSPackagePath}}">
+  <link rel="stylesheet" href="/res/css/ghabricator.css">
+  <link rel="stylesheet" href="/res/css/font/font-awesome.css">
+  <link rel="stylesheet" href="/res/css/font/font-lato.css">
+  {{range .ExtraCSS}}<link rel="stylesheet" href="{{.}}">
+  {{end}}
+  <style>
+    .phui-flank-header { display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-bottom:1px solid rgba(55,55,55,.15); }
+    .phui-flank-header-text { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; opacity:.7; }
+    .phui-flank-toggle { background:none; border:none; cursor:pointer; opacity:.5; font-size:14px; padding:2px 6px; color:inherit; }
+    .phui-flank-toggle:hover { opacity:1; }
+    .phui-formation-wrapper.collapsed .phui-flank-view { width:0 !important; min-width:0 !important; overflow:hidden; border-right:none; }
+    .phui-formation-wrapper.collapsed .phui-flank-toggle-show { display:inline-block; position:absolute; left:4px; top:4px; z-index:10; background:rgba(55,55,55,.1); border:none; cursor:pointer; padding:4px 8px; border-radius:3px; font-size:14px; color:inherit; }
+    .phui-formation-wrapper:not(.collapsed) .phui-flank-toggle-show { display:none; }
+    .phabricator-main-menu { display:flex; align-items:center; }
+    .phabricator-main-menu-brand { display:flex; align-items:center; gap:6px; }
+    .phabricator-core-user-menu, .phabricator-core-login-button { margin-left:auto; }
+    .phabricator-main-menu-alerts { margin-left:8px; }
+    .phabricator-main-menu-href:hover { background: rgba(255,255,255,.1); color: #fff !important; }
+    /* Dark mode fixes */
+    .phui-theme-dark .phui-comment-form-view { background: #1B2028; border-color: #464C5C; }
+    .phui-theme-dark .phui-comment-action-bar { border-color: #464C5C; }
+    .phui-theme-dark .phui-comment-submit-control { border-color: #464C5C; }
+    .phui-theme-dark .remarkup-assist-textarea { background: #13171D; color: #C8D1DB; border-color: #464C5C; }
+    .phui-theme-dark .aphront-form-input select { background: #1B2028; color: #C8D1DB; border-color: #464C5C; }
+    .phui-theme-dark .phui-flank-view { border-color: #464C5C; }
+    .phui-theme-dark .phui-flank-header { border-color: #464C5C; }
+    .phui-theme-dark .diff-tree-path:hover { background: rgba(255,255,255,.05); }
+    .phui-theme-dark .differential-inline-comment-head { background: rgba(255,255,255,.03); border-color: #464C5C; }
+    .phui-theme-dark .phui-header-subheader { color: rgba(200,209,219,.6) !important; }
+
+    /* ===== Moodboard-style changeset header ===== */
+    .mood-changeset-header {
+      background: #ECEEF4;
+      padding: 8px 12px;
+      border-bottom: 1px solid #C7CCD9;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #292e36;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      cursor: pointer;
+      user-select: none;
+    }
+    .mood-changeset-header:hover { background: #e2e5ed; }
+    .mood-changeset-header .stats { font-weight: 400; color: #6b748c; margin-left: auto; }
+    .mood-changeset-header .stats .add-stat { color: #139543; }
+    .mood-changeset-header .stats .del-stat { color: #c0392b; }
+    .mood-changeset-header .changeset-collapse-toggle {
+      transition: transform 0.15s ease;
+      font-size: 12px;
+      color: #6b748c;
+    }
+    .differential-changeset.changeset-collapsed .changeset-view-content { display: none; }
+    .differential-changeset.changeset-collapsed .mood-changeset-header .changeset-collapse-toggle {
+      transform: rotate(-90deg);
+    }
+    .differential-changeset.changeset-collapsed .mood-changeset-header {
+      border-bottom-color: transparent;
+    }
+
+    /* Dark mode changeset header */
+    .phui-theme-dark .mood-changeset-header {
+      background: rgba(255,255,255,.08);
+      border-color: #464C5C;
+      color: #C8D1DB;
+    }
+    .phui-theme-dark .mood-changeset-header:hover { background: rgba(255,255,255,.12); }
+    .phui-theme-dark .mood-changeset-header .stats { color: rgba(200,209,219,.6); }
+
+    /* ===== Moodboard-style inline comments ===== */
+    .mood-inline-comment {
+      margin: 8px 12px;
+      border: 1px solid #c7ccd9;
+      border-radius: 4px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .mood-inline-header {
+      background: #F8F9FC;
+      padding: 6px 12px;
+      font-size: 12px;
+      border-bottom: 1px solid #C7CCD9;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mood-inline-header strong { color: #464C5C; }
+    .mood-inline-body { padding: 8px 12px; font-size: 13px; color: #464C5C; line-height: 1.5; }
+    .mood-inline-actions {
+      padding: 6px 12px;
+      border-top: 1px solid #e3e4e8;
+      display: flex;
+      gap: 12px;
+    }
+    .mood-inline-actions a {
+      font-size: 11px;
+      color: #6b748c;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .mood-inline-actions a:hover { color: #136cb2; }
+
+    /* Dark mode inline comments */
+    .phui-theme-dark .mood-inline-comment {
+      background: #1B2028;
+      border-color: #464C5C;
+    }
+    .phui-theme-dark .mood-inline-header {
+      background: rgba(255,255,255,.04);
+      border-color: #464C5C;
+    }
+    .phui-theme-dark .mood-inline-header strong { color: #C8D1DB; }
+    .phui-theme-dark .mood-inline-body { color: #C8D1DB; }
+    .phui-theme-dark .mood-inline-actions { border-color: #464C5C; }
+    .phui-theme-dark .mood-inline-actions a { color: rgba(200,209,219,.6); }
+
+    /* ===== Moodboard-style review form ===== */
+    .mood-review-form {
+      border: 1px solid #c7ccd9;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .mood-review-form textarea {
+      width: 100%;
+      border: none;
+      padding: 12px;
+      font-size: 13px;
+      font-family: inherit;
+      min-height: 80px;
+      resize: vertical;
+      outline: none;
+      box-sizing: border-box;
+      background: transparent;
+      color: #292e36;
+    }
+    .mood-review-form .form-footer {
+      background: #f6f8fa;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-top: 1px solid #e3e4e8;
+    }
+    .mood-review-form .form-footer .pending {
+      font-size: 12px;
+      color: #6b748c;
+      margin-right: auto;
+    }
+    .mood-btn {
+      padding: 4px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid;
+    }
+    .mood-btn-default {
+      border-color: #C7CCD9;
+      background: linear-gradient(to bottom, #ffffff, #f1f0f1);
+      color: #464C5C;
+    }
+    .mood-btn-green {
+      border-color: #139543;
+      background: linear-gradient(to bottom, #23BB5B, #139543);
+      color: #fff;
+    }
+    .mood-btn-red {
+      border-color: #b33225;
+      background: linear-gradient(to bottom, #d25454, #b33225);
+      color: #fff;
+    }
+
+    /* Dark mode review form */
+    .phui-theme-dark .mood-review-form {
+      background: #1B2028;
+      border-color: #464C5C;
+    }
+    .phui-theme-dark .mood-review-form textarea { color: #C8D1DB; }
+    .phui-theme-dark .mood-review-form .form-footer {
+      background: rgba(255,255,255,.04);
+      border-color: #464C5C;
+    }
+
+    /* ===== Moodboard-style curtain sidebar ===== */
+    .mood-curtain-box {
+      border: 1px solid #c7ccd9;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background: #fff;
+    }
+    .mood-curtain-title {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 12px;
+      color: #292e36;
+    }
+    .mood-curtain-prop {
+      display: flex;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: 13px;
+    }
+    .mood-curtain-key {
+      color: #6b748c;
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 60px;
+    }
+    .mood-curtain-val { color: #292e36; }
+    .mood-curtain-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Dark mode curtain */
+    .phui-theme-dark .mood-curtain-box {
+      background: #1B2028;
+      border-color: #464C5C;
+    }
+    .phui-theme-dark .mood-curtain-title { color: #C8D1DB; }
+    .phui-theme-dark .mood-curtain-key { color: rgba(200,209,219,.6); }
+    .phui-theme-dark .mood-curtain-val { color: #C8D1DB; }
+    .phui-theme-dark .mood-curtain-actions select {
+      background: #1B2028;
+      color: #C8D1DB;
+      border-color: #464C5C;
+    }
+
+    /* ===== File tree active state ===== */
+    .diff-tree-path.active {
+      background: rgba(19,108,178,.08);
+      border-left-color: #136cb2;
+    }
+    .phui-theme-dark .diff-tree-path.active {
+      background: rgba(52,152,219,.15);
+    }
+  </style>
+</head>
+<body class="device-desktop phui-theme-blindigo{{if eq .Theme "dark"}} phui-theme-dark{{end}} {{.BodyClass}}">
+  <div id="main-page-frame" class="main-page-frame">
+    <div id="phabricator-standard-page" class="phabricator-standard-page">
+
+      <div class="phabricator-main-menu phabricator-main-menu-background" data-sigil="phabricator-main-menu">
+        <a class="phabricator-main-menu-brand" href="/">
+          <span class="phabricator-main-menu-eye"></span>
+          <span class="phabricator-wordmark">Ghabricator</span>
+        </a>
+        {{if .UserLogin}}
+        <div class="phabricator-main-menu-group" style="display:flex;align-items:center;gap:2px;margin-left:16px">
+          <a href="/dashboard" class="phabricator-main-menu-href" title="Dashboard" style="padding:6px 10px;color:rgba(255,255,255,.75);text-decoration:none;font-size:13px;border-radius:3px">
+            <span class="phui-icon-view phui-font-fa fa-code-fork mrs"></span>Revisions
+          </a>
+          <a href="/paste" class="phabricator-main-menu-href" title="Paste" style="padding:6px 10px;color:rgba(255,255,255,.75);text-decoration:none;font-size:13px;border-radius:3px">
+            <span class="phui-icon-view phui-font-fa fa-clipboard mrs"></span>Paste
+          </a>
+          <a href="/herald" class="phabricator-main-menu-href" title="Herald" style="padding:6px 10px;color:rgba(255,255,255,.75);text-decoration:none;font-size:13px;border-radius:3px">
+            <span class="phui-icon-view phui-font-fa fa-bullhorn mrs"></span>Herald
+          </a>
+          <a href="/search" class="phabricator-main-menu-href" title="Search" style="padding:6px 10px;color:rgba(255,255,255,.75);text-decoration:none;font-size:13px;border-radius:3px">
+            <span class="phui-icon-view phui-font-fa fa-search mrs"></span>Search
+          </a>
+        </div>
+        <a href="/auth/logout" title="Log out ({{.UserLogin}})" class="phabricator-core-user-menu" style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;font-size:13px">
+          {{if .UserAvatarURL}}<img src="{{.UserAvatarURL}}" alt="" style="width:28px;height:28px;border-radius:3px">{{else}}<span class="phui-icon-view phui-font-fa fa-user"></span>{{end}}
+          <span>{{.UserLogin}}</span>
+        </a>
+        {{else}}
+        <a href="/auth/github" title="Sign in with GitHub" class="phabricator-core-login-button">
+          <span class="phui-icon-view phui-font-fa fa-github"></span> Sign in
+        </a>
+        {{end}}
+        <div class="phabricator-main-menu-alerts">
+          <a href="/api/theme?mode={{.ThemeToggleMode}}" class="alert-notifications" title="Toggle theme">
+            <span class="phabricator-main-menu-alert-icon phui-icon-view phui-font-fa {{.ThemeToggleIcon}}"></span>
+          </a>
+        </div>
+      </div>
+
+      <div id="phabricator-standard-page-body" class="phabricator-standard-page-body">
+
+        {{if .Crumbs}}
+        <div class="ghabricator-crumbs" style="display:flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;color:#6B748C;background:#fff;border-bottom:1px solid #c7ccd9;">
+          {{range $i, $c := .Crumbs}}
+            {{if $i}}<span style="margin:0 2px;">&#x203a;</span>{{end}}
+            {{if $c.Href}}<a href="{{$c.Href}}" style="color:#136CB2;text-decoration:none;">{{$c.Name}}</a>
+            {{else}}<span style="color:#464C5C;">{{$c.Name}}</span>{{end}}
+          {{end}}
+        </div>
+        {{end}}
+
+        {{if .HasFileTree}}
+        <!-- Formation view: left file tree sidebar + main content -->
+        <div class="phui-formation-wrapper" style="display:flex;min-height:calc(100vh - 88px);position:relative">
+          <button class="phui-flank-toggle-show" onclick="this.closest('.phui-formation-wrapper').classList.remove('collapsed')" title="Show file tree"><span class="phui-icon-view phui-font-fa fa-chevron-right"></span></button>
+          <div class="phui-flank-view" style="width:280px;min-width:280px;flex-shrink:0;border-right:1px solid rgba(55,55,55,.3)">
+            <div class="phui-flank-header">
+              <span class="phui-flank-header-text">File Tree</span>
+              <button class="phui-flank-toggle" onclick="this.closest('.phui-formation-wrapper').classList.add('collapsed')" title="Hide file tree"><span class="phui-icon-view phui-font-fa fa-chevron-left"></span></button>
+            </div>
+            <div class="phui-flank-view-body" style="overflow-y:auto;max-height:calc(100vh - 130px)">
+              {{.FileTree}}
+            </div>
+          </div>
+          <div style="flex:1;min-width:0;overflow-x:auto">
+        {{end}}
+
+        <div class="phui-two-column-view">
+          <div class="phui-two-column-container">
+            {{if .HeaderTitle}}
+            <div class="phui-two-column-header">
+              <div class="phui-header-view">
+                <div class="phui-header-shell">
+                  <h1 class="phui-header-header">{{if .HeaderIcon}}<span class="phui-header-icon phui-icon-view phui-font-fa {{.HeaderIcon}}"></span>{{end}}{{.HeaderTitle}}</h1>
+                </div>
+              </div>
+            </div>
+            {{end}}
+            <div class="phui-two-column-content">
+              <div class="phui-two-column-row grouped">
+                <div class="phui-main-column">{{.Content}}</div>
+                {{if .Curtain}}<div class="phui-side-column">{{.Curtain}}</div>{{end}}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {{if .HasFileTree}}
+          </div>
+        </div>
+        {{end}}
+
+      </div>
+    </div>
+  </div>
+
+  <script src="/res/externals/javelin/core/init.js"></script>
+  <script src="/res/pkg/core.pkg.js"></script>
+  {{range .ExtraJS}}<script src="{{.}}"></script>
+  {{end}}
+  {{range .JavelinData}}
+  <data data-javelin-init-kind="{{.Kind}}" data-javelin-init-data='{{.Data}}'></data>
+  {{end}}
+
+  <script>
+  (function() {
+    // Changeset collapse/expand
+    document.addEventListener('click', function(e) {
+      var header = e.target.closest('.mood-changeset-header');
+      if (!header) return;
+      var changeset = header.closest('.differential-changeset');
+      if (!changeset) return;
+      changeset.classList.toggle('changeset-collapsed');
+
+      // Sync file tree active state
+      var id = changeset.id; // e.g. "diff-C1"
+      if (id) {
+        var csId = id.replace('diff-', '');
+        document.querySelectorAll('.diff-tree-path').forEach(function(el) {
+          el.classList.toggle('active', el.getAttribute('data-changeset-id') === csId);
+        });
+      }
+    });
+
+    // File tree click → scroll to changeset and expand it
+    document.addEventListener('click', function(e) {
+      var treePath = e.target.closest('.diff-tree-path-changeset');
+      if (!treePath) return;
+      e.preventDefault();
+      var csId = treePath.getAttribute('data-changeset-id');
+      if (!csId) return;
+      var changeset = document.getElementById('diff-' + csId);
+      if (!changeset) return;
+
+      // Expand if collapsed
+      changeset.classList.remove('changeset-collapsed');
+
+      // Scroll into view
+      changeset.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Highlight in file tree
+      document.querySelectorAll('.diff-tree-path').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      treePath.classList.add('active');
+    });
+
+    // Auto-collapse large changesets (>70 lines added or removed)
+    document.addEventListener('DOMContentLoaded', function() {
+      var changesets = document.querySelectorAll('.differential-changeset');
+      changesets.forEach(function(cs) {
+        var added = parseInt(cs.getAttribute('data-lines-added') || '0', 10);
+        var removed = parseInt(cs.getAttribute('data-lines-removed') || '0', 10);
+        if (added > 70 || removed > 70) {
+          cs.classList.add('changeset-collapsed');
+        }
+      });
+
+      // Update pending comment count
+      var inlines = document.querySelectorAll('.differential-inline-comment');
+      var counter = document.getElementById('pending-comment-count');
+      if (counter && inlines.length > 0) {
+        counter.textContent = inlines.length + ' inline comment' + (inlines.length > 1 ? 's' : '');
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

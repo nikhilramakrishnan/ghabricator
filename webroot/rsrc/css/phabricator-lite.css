@@ -1,0 +1,169 @@
+/*
+ * Phabricator Lite — CSS overrides
+ *
+ * Extracted from mood board design. Fixes icon rendering artifacts,
+ * provides explicit tag colors, and adds dark-mode overrides for
+ * the .phui-theme-dark body class.
+ */
+
+/* ================================================================
+   Icon artifact fixes — strip background/border/pseudo-elements
+   that Phabricator CSS adds to FontAwesome glyphs
+   ================================================================ */
+.phui-icon-view.phui-font-fa {
+  background: none !important;
+  background-image: none !important;
+  text-decoration: none !important;
+  border: none !important;
+}
+.phui-icon-view.phui-font-fa::before {
+  background: none !important;
+  text-decoration: none !important;
+}
+.phui-icon-view.phui-font-fa::after {
+  display: none !important;
+}
+
+/* ================================================================
+   Icon color fixes — Phabricator CSS sets grey that's invisible
+   on some backgrounds
+   ================================================================ */
+.phui-header-icon.phui-icon-view { color: #6b748c; }
+.phui-oi-attribute .phui-icon-view { color: #8C98B8; }
+.phui-tag-core .phui-icon-view { color: inherit; }
+
+/* ================================================================
+   Timeline fix — remove vertical connector line
+   ================================================================ */
+.phui-timeline-view {
+  background-image: none !important;
+}
+
+/* ================================================================
+   Tag color overrides — explicit backgrounds for light mode
+   ================================================================ */
+.phui-tag-view.phui-tag-type-shade {
+  display: inline-block;
+  vertical-align: middle;
+}
+.phui-tag-view.phui-tag-type-shade .phui-tag-core {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 22px;
+  font-weight: 600;
+}
+.phui-tag-shade-green .phui-tag-core  { background: #bef5cb; color: #1a7f37; }
+.phui-tag-shade-red .phui-tag-core    { background: #fdd;    color: #b33225; }
+.phui-tag-shade-blue .phui-tag-core   { background: #ddf4ff; color: #0969da; }
+.phui-tag-shade-orange .phui-tag-core { background: #fff1e5; color: #bc4c00; }
+.phui-tag-shade-indigo .phui-tag-core { background: #e8def8; color: #6b479c; }
+.phui-tag-shade-grey .phui-tag-core   { background: #eceef4; color: #6b748c; }
+.phui-tag-shade-yellow .phui-tag-core { background: #fff8c5; color: #9a6700; }
+.phui-tag-shade-violet .phui-tag-core { background: #eddeff; color: #8250df; }
+
+
+/* ================================================================
+   Dark mode overrides (.phui-theme-dark)
+   ================================================================ */
+
+/* Boxes and object containers */
+.phui-theme-dark .phui-box,
+.phui-theme-dark .phui-object-box {
+  background: #26374c;
+  border-color: rgba(255,255,255,.3);
+}
+
+/* Text colors */
+.phui-theme-dark .phui-header-header,
+.phui-theme-dark .phui-oi-link,
+.phui-theme-dark .phui-oi-name,
+.phui-theme-dark .phui-property-list-value,
+.phui-theme-dark .phui-timeline-title {
+  color: rgba(255,255,255,.9);
+}
+.phui-theme-dark .phui-oi-attribute,
+.phui-theme-dark .phui-property-list-key,
+.phui-theme-dark .phui-timeline-extra {
+  color: rgba(255,255,255,.6);
+}
+
+/* Info view */
+.phui-theme-dark .phui-info-view {
+  background: #26374c;
+  border-color: rgba(255,255,255,.3);
+  color: rgba(255,255,255,.6);
+}
+
+/* Icons */
+.phui-theme-dark .phui-icon-view,
+.phui-theme-dark .phui-font-fa {
+  color: rgba(255,255,255,.6);
+}
+
+/* Links */
+.phui-theme-dark a { color: #3498db; }
+
+/* Timeline events */
+.phui-theme-dark .phui-timeline-event-view {
+  background: #26374c;
+  border-color: rgba(255,255,255,.3);
+}
+
+/* Object items */
+.phui-theme-dark .phui-oi {
+  border-color: rgba(255,255,255,.3);
+}
+.phui-theme-dark .phui-oi-frame {
+  background: #26374c;
+}
+.phui-theme-dark .phui-oi-list-view {
+  background: #26374c;
+}
+
+/* Tag borders */
+.phui-theme-dark .phui-tag-view {
+  border-color: rgba(255,255,255,.2);
+}
+
+/* Tag shade overrides — dark mode */
+.phui-theme-dark .phui-tag-shade-green .phui-tag-core  { background: rgba(35,187,91,.25);   color: #4ade80; }
+.phui-theme-dark .phui-tag-shade-red .phui-tag-core    { background: rgba(210,84,84,.25);    color: #f87171; }
+.phui-theme-dark .phui-tag-shade-blue .phui-tag-core   { background: rgba(52,152,219,.25);   color: #60a5fa; }
+.phui-theme-dark .phui-tag-shade-orange .phui-tag-core { background: rgba(230,126,34,.25);   color: #fb923c; }
+.phui-theme-dark .phui-tag-shade-indigo .phui-tag-core { background: rgba(107,71,156,.25);   color: #a78bfa; }
+.phui-theme-dark .phui-tag-shade-grey .phui-tag-core   { background: rgba(255,255,255,.1);   color: rgba(255,255,255,.7); }
+.phui-theme-dark .phui-tag-shade-yellow .phui-tag-core { background: rgba(241,196,15,.25);   color: #fbbf24; }
+.phui-theme-dark .phui-tag-shade-violet .phui-tag-core { background: rgba(142,68,173,.25);   color: #c084fc; }
+
+/* Breadcrumbs — dark mode */
+.phui-theme-dark .phabricator-lite-crumbs {
+  background: #1B2028 !important;
+  border-bottom-color: #464C5C !important;
+  color: #8b949e !important;
+}
+.phui-theme-dark .phabricator-lite-crumbs a {
+  color: #58a6ff !important;
+}
+.phui-theme-dark .phabricator-lite-crumbs span {
+  color: #8b949e;
+}
+
+/* Header shell — blend with box */
+.phui-theme-dark .phui-header-shell {
+  background: transparent !important;
+  border-bottom-color: rgba(255,255,255,.08);
+  padding: 8px 12px;
+}
+.phui-theme-dark .phui-header-header {
+  color: rgba(255,255,255,.85);
+  font-size: 15px;
+  font-weight: 600;
+}
+.phui-theme-dark .phui-header-icon.phui-icon-view {
+  color: rgba(255,255,255,.4);
+}
+.phui-theme-dark .phui-object-box {
+  border-color: rgba(255,255,255,.08);
+}

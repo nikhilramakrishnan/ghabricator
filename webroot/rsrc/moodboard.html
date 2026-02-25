@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Ghabricator — Design Mood Board</title>
+<link rel="stylesheet" href="/res/pkg/core.pkg.css">
+<link rel="stylesheet" href="/res/pkg/differential.pkg.css">
+<style>
+  body {
+    background: #f3f5f7;
+    margin: 0;
+    padding: 0;
+    font: 13px 'Segoe UI', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #464C5C;
+  }
+  .mood-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  .mood-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6b748c;
+    margin: 32px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #c7ccd9;
+  }
+  .mood-label:first-child { margin-top: 0; }
+  .mood-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .mood-full { grid-column: 1 / -1; }
+
+  /* Dark mode panel — Phabricator dark theme colors */
+  .dark-panel {
+    background: #223246;
+    border-radius: 6px;
+    padding: 24px;
+  }
+  .dark-panel .phui-box,
+  .dark-panel .phui-object-box {
+    background: #26374c;
+    border-color: rgba(255,255,255,.3);
+  }
+  .dark-panel .phui-header-header,
+  .dark-panel .phui-oi-link,
+  .dark-panel .phui-oi-name,
+  .dark-panel .phui-property-list-value,
+  .dark-panel .phui-timeline-title {
+    color: rgba(255,255,255,.9);
+  }
+  .dark-panel .phui-oi-attribute,
+  .dark-panel .phui-property-list-key,
+  .dark-panel .phui-timeline-extra {
+    color: rgba(255,255,255,.6);
+  }
+  .dark-panel .phui-info-view {
+    background: #26374c;
+    border-color: rgba(255,255,255,.3);
+    color: rgba(255,255,255,.6);
+  }
+  .dark-panel .mood-label {
+    color: rgba(255,255,255,.6);
+    border-color: rgba(255,255,255,.3);
+  }
+  /* Force ALL icons in dark panel to be visible */
+  .dark-panel .phui-icon-view,
+  .dark-panel .phui-font-fa {
+    color: rgba(255,255,255,.6);
+  }
+  .dark-panel a { color: #3498db; }
+  .dark-panel .phui-timeline-event-view {
+    background: #26374c;
+    border-color: rgba(255,255,255,.3);
+  }
+  .dark-panel .phui-oi {
+    border-color: rgba(255,255,255,.3);
+  }
+  .dark-panel .phui-oi-frame {
+    background: #26374c;
+  }
+  .dark-panel .phui-oi-list-view {
+    background: #26374c;
+  }
+  .dark-panel .phui-tag-view {
+    border-color: rgba(255,255,255,.2);
+  }
+  .dark-panel .phui-tag-shade-green .phui-tag-core { background: rgba(35,187,91,.25); color: #4ade80; }
+  .dark-panel .phui-tag-shade-red .phui-tag-core { background: rgba(210,84,84,.25); color: #f87171; }
+  .dark-panel .phui-tag-shade-blue .phui-tag-core { background: rgba(52,152,219,.25); color: #60a5fa; }
+  .dark-panel .phui-tag-shade-orange .phui-tag-core { background: rgba(230,126,34,.25); color: #fb923c; }
+  .dark-panel .phui-tag-shade-indigo .phui-tag-core { background: rgba(107,71,156,.25); color: #a78bfa; }
+  .dark-panel .phui-tag-shade-grey .phui-tag-core { background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); }
+  .dark-panel .phui-tag-shade-yellow .phui-tag-core { background: rgba(241,196,15,.25); color: #fbbf24; }
+  .dark-panel .phui-tag-shade-violet .phui-tag-core { background: rgba(142,68,173,.25); color: #c084fc; }
+
+  /* Remove timeline vertical connector line */
+  .phui-timeline-view {
+    background-image: none !important;
+  }
+
+  /* Dark mode header shell — blend with box, not contrast */
+  .dark-panel .phui-header-shell {
+    background: transparent !important;
+    border-bottom-color: rgba(255,255,255,.08);
+    padding: 8px 12px;
+  }
+  .dark-panel .phui-header-header {
+    color: rgba(255,255,255,.85);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .dark-panel .phui-header-icon.phui-icon-view {
+    color: rgba(255,255,255,.4);
+  }
+  .dark-panel .phui-object-box {
+    border-color: rgba(255,255,255,.08);
+  }
+
+  /* Force icon color inheritance — Phabricator CSS sets grey that's invisible on dark bgs */
+  .phui-header-icon.phui-icon-view { color: #6b748c; }
+  .phui-oi-attribute .phui-icon-view { color: #8C98B8; }
+  .phui-tag-core .phui-icon-view { color: inherit; }
+
+  /* Strip Phabricator's phui-icon-view artifacts — it adds ::before/::after and
+     background images that create lines through FontAwesome glyphs */
+  .phui-icon-view.phui-font-fa {
+    background: none !important;
+    background-image: none !important;
+    text-decoration: none !important;
+    border: none !important;
+  }
+  .phui-icon-view.phui-font-fa::before {
+    background: none !important;
+    text-decoration: none !important;
+  }
+  .phui-icon-view.phui-font-fa::after {
+    display: none !important;
+  }
+
+  /* Clean icon class for header/section icons */
+  .mood-icon {
+    display: inline-block;
+    font: normal normal normal 14px/1 FontAwesome;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    margin-right: 6px;
+  }
+  .mood-icon.muted { color: #8C98B8; }
+  .dark-panel .mood-icon.muted { color: rgba(255,255,255,.5); }
+
+  /* Explicit tag styling — Phabricator's shade CSS can be too subtle */
+  .phui-tag-view.phui-tag-type-shade {
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .phui-tag-view.phui-tag-type-shade .phui-tag-core {
+    display: inline-block;
+    padding: 0 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 22px;
+    font-weight: 600;
+  }
+  .phui-tag-shade-green .phui-tag-core { background: #bef5cb; color: #1a7f37; }
+  .phui-tag-shade-red .phui-tag-core { background: #fdd; color: #b33225; }
+  .phui-tag-shade-blue .phui-tag-core { background: #ddf4ff; color: #0969da; }
+  .phui-tag-shade-orange .phui-tag-core { background: #fff1e5; color: #bc4c00; }
+  .phui-tag-shade-indigo .phui-tag-core { background: #e8def8; color: #6b479c; }
+  .phui-tag-shade-grey .phui-tag-core { background: #eceef4; color: #6b748c; }
+  .phui-tag-shade-yellow .phui-tag-core { background: #fff8c5; color: #9a6700; }
+  .phui-tag-shade-violet .phui-tag-core { background: #eddeff; color: #8250df; }
+
+  /* Diff table styling for mood board */
+  .mood-diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .mood-diff-table td {
+    padding: 1px 8px;
+    white-space: pre;
+    border: none;
+  }
+  .mood-diff-table .line-num {
+    color: #6b748c;
+    text-align: right;
+    width: 45px;
+    user-select: none;
+    vertical-align: top;
+  }
+  .mood-diff-table .gutter {
+    width: 20px;
+    text-align: center;
+    color: #6b748c;
+  }
+  .mood-diff-table .diff-add { background: rgba(151,234,151,.3); }
+  .mood-diff-table .diff-del { background: rgba(251,175,175,.3); }
+  .mood-diff-table .diff-hunk { background: #F8F9FC; color: #8C98B8; }
+  .mood-diff-table .diff-add .gutter { color: #139543; }
+  .mood-diff-table .diff-del .gutter { color: #c0392b; }
+
+  .dark-panel .mood-diff-table .diff-add { background: rgba(151,234,151,.55); }
+  .dark-panel .mood-diff-table .diff-del { background: rgba(251,175,175,.55); }
+  .dark-panel .mood-diff-table .diff-hunk { background: rgba(255,255,255,.05); color: rgba(255,255,255,.3); }
+  .dark-panel .mood-diff-table td { color: rgba(255,255,255,.8); }
+  .dark-panel .mood-diff-table .line-num { color: rgba(255,255,255,.3); }
+  .dark-panel .mood-diff-table .diff-add .gutter { color: #139543; }
+  .dark-panel .mood-diff-table .diff-del .gutter { color: #c0392b; }
+
+  /* Inline comment styling */
+  .mood-inline-comment {
+    margin: 8px 0 8px 60px;
+    border: 1px solid #c7ccd9;
+    border-radius: 4px;
+    background: #fff;
+    overflow: hidden;
+  }
+  .mood-inline-header {
+    background: #F8F9FC;
+    padding: 6px 12px;
+    font-size: 12px;
+    border-bottom: 1px solid #C7CCD9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mood-inline-header strong { color: #464C5C; }
+  .mood-inline-header .time { color: #6B748C; margin-left: auto; }
+  .mood-inline-body { padding: 8px 12px; font-size: 13px; color: #464C5C; line-height: 1.5; }
+  .mood-inline-actions {
+    padding: 6px 12px;
+    border-top: 1px solid #e3e4e8;
+    display: flex;
+    gap: 12px;
+  }
+  .mood-inline-actions a {
+    font-size: 11px;
+    color: #6b748c;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .mood-inline-actions a:hover { color: #136cb2; }
+
+  .dark-panel .mood-inline-comment {
+    background: #26374c;
+    border-color: rgba(255,255,255,.3);
+  }
+  .dark-panel .mood-inline-header {
+    background: #1c293b;
+    border-color: rgba(255,255,255,.3);
+  }
+  .dark-panel .mood-inline-header strong { color: rgba(255,255,255,.9); }
+  .dark-panel .mood-inline-body { color: rgba(255,255,255,.8); }
+  .dark-panel .mood-inline-actions { border-color: rgba(255,255,255,.3); }
+  .dark-panel .mood-inline-actions a { color: rgba(255,255,255,.6); }
+
+  /* Suggestion block */
+  .mood-suggestion {
+    margin: 8px 0;
+    border: 1px solid #c7ccd9;
+    border-radius: 4px;
+    overflow: hidden;
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+  .mood-suggestion-header {
+    background: #F8F9FC;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: #8C98B8;
+    border-bottom: 1px solid #C7CCD9;
+  }
+  .mood-suggestion .del { background: rgba(251,175,175,.3); padding: 2px 12px; }
+  .mood-suggestion .add { background: rgba(151,234,151,.3); padding: 2px 12px; }
+
+  .dark-panel .mood-suggestion { border-color: rgba(255,255,255,.3); }
+  .dark-panel .mood-suggestion-header { background: #1c293b; border-color: rgba(255,255,255,.3); color: rgba(255,255,255,.6); }
+  .dark-panel .mood-suggestion .del { background: rgba(251,175,175,.55); color: rgba(255,255,255,.8); }
+  .dark-panel .mood-suggestion .add { background: rgba(151,234,151,.55); color: rgba(255,255,255,.8); }
+
+  /* File tree for repo browser */
+  .mood-file-tree {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .mood-file-tree td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e3e4e8;
+    color: #292e36;
+  }
+  .mood-file-tree .ft-icon { width: 24px; color: #6b748c; }
+  .mood-file-tree .ft-name a { color: #136cb2; text-decoration: none; }
+  .mood-file-tree .ft-msg { color: #6b748c; }
+  .mood-file-tree .ft-date { color: #6b748c; text-align: right; width: 100px; }
+
+  .dark-panel .mood-file-tree td { border-color: #464C5C; color: #C8D1DB; }
+  .dark-panel .mood-file-tree .ft-icon { color: #8b949e; }
+  .dark-panel .mood-file-tree .ft-msg { color: #8b949e; }
+  .dark-panel .mood-file-tree .ft-date { color: #8b949e; }
+
+  /* Command palette mock */
+  .mood-palette {
+    width: 480px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #c7ccd9;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+    overflow: hidden;
+  }
+  .mood-palette-input {
+    width: 100%;
+    border: none;
+    padding: 14px 16px;
+    font-size: 15px;
+    outline: none;
+    border-bottom: 1px solid #e3e4e8;
+    box-sizing: border-box;
+    background: transparent;
+    color: #292e36;
+  }
+  .mood-palette-results { padding: 4px 0; }
+  .mood-palette-item {
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #292e36;
+  }
+  .mood-palette-item.active { background: #2980b9; color: #fff; }
+  .mood-palette-item .icon { width: 20px; text-align: center; opacity: 0.5; }
+  .mood-palette-item.active .icon { opacity: 1; }
+  .mood-palette-item .hint { margin-left: auto; font-size: 11px; opacity: 0.5; }
+
+  .dark-panel .mood-palette {
+    background: #26374c;
+    border-color: rgba(255,255,255,.3);
+  }
+  .dark-panel .mood-palette-input {
+    color: rgba(255,255,255,.9) !important;
+    border-color: rgba(255,255,255,.3);
+    background: #1c293b;
+  }
+  .dark-panel .mood-palette-item { color: rgba(255,255,255,.8); }
+  .dark-panel .mood-palette-item .hint { color: rgba(255,255,255,.4); }
+  .dark-panel .mood-palette-item.active { background: #2980b9; color: #fff; }
+  .dark-panel .mood-palette-item.active .hint { color: rgba(255,255,255,.7); }
+
+  /* Header bar mock */
+  .mood-header {
+    background: #292e36;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    height: 44px;
+    gap: 4px;
+  }
+  .mood-header .logo {
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mood-header .logo .fa { font-size: 18px; opacity: 0.8; }
+  .mood-header .nav-link {
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    padding: 8px 12px;
+    text-decoration: none;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mood-header .phui-icon-view,
+  .mood-header .phui-font-fa {
+    color: inherit;
+  }
+  .mood-header .nav-link:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .mood-header .nav-link.active { color: #fff; background: rgba(255,255,255,0.12); }
+  .mood-header .spacer { flex: 1; }
+  .mood-header .user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255,255,255,0.8);
+    font-size: 13px;
+  }
+  .mood-header .user img {
+    width: 28px;
+    height: 28px;
+    border-radius: 3px;
+  }
+  .mood-header .theme-btn {
+    color: rgba(255,255,255,0.5);
+    font-size: 16px;
+    padding: 4px 8px;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+
+  /* Curtain sidebar mock */
+  .mood-curtain {
+    width: 280px;
+    min-width: 280px;
+  }
+  .mood-curtain .phui-property-list-key {
+    font-size: 12px;
+    color: #6b748c;
+    font-weight: 600;
+    padding: 6px 0 2px;
+  }
+  .mood-curtain .phui-property-list-value {
+    font-size: 13px;
+    color: #292e36;
+    padding: 2px 0 6px;
+  }
+  .dark-panel .mood-curtain .phui-property-list-key { color: #8b949e; }
+
+  /* Sticky changeset header */
+  .mood-changeset-header {
+    background: #ECEEF4;
+    padding: 8px 12px;
+    border-bottom: 1px solid #C7CCD9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #292e36;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .mood-changeset-header .stats {
+    font-weight: 400;
+    color: #6b748c;
+    margin-left: auto;
+  }
+  .mood-changeset-header .stats .add-stat { color: #139543; }
+  .mood-changeset-header .stats .del-stat { color: #c0392b; }
+  .dark-panel .mood-changeset-header {
+    background: rgba(255,255,255,.1);
+    border-color: rgba(255,255,255,.3);
+    color: rgba(255,255,255,.9);
+  }
+  .dark-panel .mood-changeset-header .stats { color: rgba(255,255,255,.6); }
+  .dark-panel .mood-changeset-header .stats .add-stat { color: #139543; }
+  .dark-panel .mood-changeset-header .stats .del-stat { color: #c0392b; }
+
+  /* Review form */
+  .mood-review-form {
+    border: 1px solid #c7ccd9;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .mood-review-form textarea {
+    width: 100%;
+    border: none;
+    padding: 12px;
+    font-size: 13px;
+    font-family: inherit;
+    min-height: 80px;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+    background: transparent;
+    color: #292e36;
+  }
+  .mood-review-form .form-footer {
+    background: #f6f8fa;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-top: 1px solid #e3e4e8;
+  }
+  .mood-review-form .form-footer .pending {
+    font-size: 12px;
+    color: #6b748c;
+    margin-right: auto;
+  }
+  .dark-panel .mood-review-form {
+    background: #26374c;
+    border-color: rgba(255,255,255,.3);
+  }
+  .dark-panel .mood-review-form textarea { color: rgba(255,255,255,.9); }
+  .dark-panel .mood-review-form .form-footer {
+    background: #1c293b;
+    border-color: rgba(255,255,255,.3);
+  }
+
+  /* Two-column layout */
+  .mood-two-col {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .mood-two-col .main { flex: 1; min-width: 0; }
+
+  /* Context expand */
+  .mood-context-expand {
+    text-align: center;
+    padding: 4px;
+    background: #ECEEF4;
+    color: #136CB2;
+    font-size: 12px;
+    cursor: pointer;
+    border-top: 1px solid #d0d7de;
+    border-bottom: 1px solid #d0d7de;
+  }
+  .mood-context-expand:hover { background: #dce6f5; }
+  .dark-panel .mood-context-expand {
+    background: rgba(255,255,255,.1);
+    border-color: rgba(255,255,255,.3);
+    color: #3498db;
+  }
+
+  /* TOC sidebar */
+  .mood-toc {
+    width: 220px;
+    min-width: 220px;
+    font-size: 12px;
+  }
+  .mood-toc .toc-filter {
+    width: 100%;
+    border: 1px solid #c7ccd9;
+    border-radius: 3px;
+    padding: 6px 8px;
+    font-size: 12px;
+    margin-bottom: 8px;
+    outline: none;
+    box-sizing: border-box;
+    background: transparent;
+    color: #292e36;
+  }
+  .mood-toc .toc-file {
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #292e36;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .mood-toc .toc-file:hover { background: #f0f1f3; }
+  .mood-toc .toc-file.viewed { opacity: 0.5; }
+  .mood-toc .toc-file .check { color: #1a7f37; }
+  .mood-toc .toc-file .stats { margin-left: auto; color: #6b748c; font-size: 11px; }
+  .mood-toc .toc-progress {
+    margin-top: 8px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #6b748c;
+  }
+  .mood-toc .progress-bar {
+    height: 4px;
+    background: #e3e4e8;
+    border-radius: 2px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .mood-toc .progress-fill {
+    height: 100%;
+    background: #1a7f37;
+    border-radius: 2px;
+    width: 33%;
+  }
+  .dark-panel .mood-toc .toc-filter { border-color: rgba(255,255,255,.3); color: rgba(255,255,255,.9); }
+  .dark-panel .mood-toc .toc-file { color: rgba(255,255,255,.8); }
+  .dark-panel .mood-toc .toc-file:hover { background: #1c293b; }
+  .dark-panel .mood-toc .progress-bar { background: rgba(255,255,255,.3); }
+</style>
+</head>
+<body class="phui-theme-blindigo">
+
+<!-- ============================================================ -->
+<!-- HEADER BAR -->
+<!-- ============================================================ -->
+<div class="mood-header">
+  <div class="logo">
+    <span class="phui-icon-view phui-font-fa fa-cog"></span>
+    Ghabricator
+  </div>
+  <a class="nav-link active" href="#">
+    <span class="phui-icon-view phui-font-fa fa-code-fork"></span> Revisions
+  </a>
+  <a class="nav-link" href="#">
+    <span class="phui-icon-view phui-font-fa fa-clipboard"></span> Paste
+  </a>
+  <a class="nav-link" href="#">
+    <span class="phui-icon-view phui-font-fa fa-shield"></span> Herald
+  </a>
+  <a class="nav-link" href="#">
+    <span class="phui-icon-view phui-font-fa fa-search"></span> Search
+  </a>
+  <div class="spacer"></div>
+  <div class="user">
+    <img src="https://avatars.githubusercontent.com/u/6330920?v=4" alt="">
+    nikhilramakrishnan
+  </div>
+  <div class="theme-btn">
+    <span class="phui-icon-view phui-font-fa fa-moon-o"></span>
+  </div>
+</div>
+
+<div class="mood-section">
+
+<!-- ============================================================ -->
+<!-- BREADCRUMBS -->
+<!-- ============================================================ -->
+<div class="mood-label">Breadcrumbs</div>
+<div style="background:#fff; border:1px solid #c7ccd9; border-radius:4px; padding:8px 12px; margin-bottom:16px; display:flex; align-items:center; gap:0; font-size:13px;">
+  <a href="#" style="color:#136cb2; text-decoration:none;">Home</a>
+  <span style="color:#6b748c; margin:0 8px; font-size:14px;">›</span>
+  <a href="#" style="color:#136cb2; text-decoration:none;">nikhilr/phabricator</a>
+  <span style="color:#6b748c; margin:0 8px; font-size:14px;">›</span>
+  <span style="color:#292e36; font-weight:600;">"D22: Add sports broadcast UI"</span>
+</div>
+
+<!-- ============================================================ -->
+<!-- DASHBOARD: OBJECT ITEM LIST -->
+<!-- ============================================================ -->
+<div class="mood-label">Dashboard — Revision List</div>
+<div class="phui-box phui-box-border phui-object-box" style="margin-bottom:16px;">
+  <div class="phui-header-shell">
+    <div class="phui-header-view">
+      <h1 class="phui-header-header"><span class="phui-header-icon phui-icon-view phui-font-fa fa-pencil"></span>Authored</h1>
+    </div>
+  </div>
+  <ul class="phui-oi-list-view">
+    <li class="phui-oi phui-oi-bar-color-blue phui-oi-with-image">
+      <div class="phui-oi-frame">
+        <div class="phui-oi-frame-content">
+          <div class="phui-oi-image" style="background-image:url(https://avatars.githubusercontent.com/u/6330920?v=4)"></div>
+          <div class="phui-oi-content-box">
+            <div class="phui-oi-table"><div class="phui-oi-table-row"><div class="phui-oi-col1">
+              <div class="phui-oi-name">
+                <a href="#" class="phui-oi-link">Add sports broadcast UI with full FPL integration</a>
+                <span class="phui-tag-view phui-tag-shade-green phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-check mrs"></span>Accepted</span></span>
+              </div>
+              <div class="phui-oi-content">
+                <ul class="phui-oi-attributes">
+                  <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-user mrs"></span>nikhilramakrishnan</li>
+                  <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-github"></span> aelkady/Superclub#22</li>
+                  <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-clock-o"></span> 2 hours ago</li>
+                  <li class="phui-oi-attribute">
+                    <span class="phui-tag-view phui-tag-shade-blue phui-tag-type-shade"><span class="phui-tag-core">enhancement</span></span>
+                    <span class="phui-tag-view phui-tag-shade-red phui-tag-type-shade"><span class="phui-tag-core">bug</span></span>
+                  </li>
+                </ul>
+              </div>
+            </div></div></div>
+          </div>
+        </div>
+      </div>
+    </li>
+    <li class="phui-oi phui-oi-bar-color-grey phui-oi-with-image">
+      <div class="phui-oi-frame">
+        <div class="phui-oi-frame-content">
+          <div class="phui-oi-image" style="background-image:url(https://avatars.githubusercontent.com/u/6330920?v=4)"></div>
+          <div class="phui-oi-content-box">
+            <div class="phui-oi-table"><div class="phui-oi-table-row"><div class="phui-oi-col1">
+              <div class="phui-oi-name">
+                <a href="#" class="phui-oi-link">Fix authentication token refresh on session expiry</a>
+                <span class="phui-tag-view phui-tag-shade-grey phui-tag-type-shade"><span class="phui-tag-core">Draft</span></span>
+              </div>
+              <div class="phui-oi-content">
+                <ul class="phui-oi-attributes">
+                  <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-user mrs"></span>nikhilramakrishnan</li>
+                  <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-github"></span> nikhilr/auth-service#18</li>
+                  <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-clock-o"></span> 1 day ago</li>
+                </ul>
+              </div>
+            </div></div></div>
+          </div>
+        </div>
+      </div>
+    </li>
+    <li class="phui-oi phui-oi-bar-color-violet phui-oi-with-image">
+      <div class="phui-oi-frame">
+        <div class="phui-oi-frame-content">
+          <div class="phui-oi-image" style="background-image:url(https://avatars.githubusercontent.com/u/6330920?v=4)"></div>
+          <div class="phui-oi-content-box">
+            <div class="phui-oi-table"><div class="phui-oi-table-row"><div class="phui-oi-col1">
+              <div class="phui-oi-name">
+                <a href="#" class="phui-oi-link">Refactor database connection pooling</a>
+                <span class="phui-tag-view phui-tag-shade-indigo phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-code-fork mrs"></span>Merged</span></span>
+              </div>
+              <div class="phui-oi-content">
+                <ul class="phui-oi-attributes">
+                  <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-user mrs"></span>nikhilramakrishnan</li>
+                  <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-github"></span> nikhilr/api-server#15</li>
+                  <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-clock-o"></span> 3 days ago</li>
+                </ul>
+              </div>
+            </div></div></div>
+          </div>
+        </div>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<!-- Empty state -->
+<div class="phui-box phui-box-border phui-object-box" style="margin-bottom:16px;">
+  <div class="phui-header-shell">
+    <div class="phui-header-view">
+      <h1 class="phui-header-header"><span class="phui-header-icon phui-icon-view phui-font-fa fa-eye"></span>Review Requested</h1>
+    </div>
+  </div>
+  <div class="phui-info-view phui-info-severity-nodata">
+    <span class="phui-icon-view phui-font-fa fa-inbox mrs"></span>No open review requests.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PR DETAIL: THREE-COLUMN LAYOUT (TOC + DIFF + CURTAIN) -->
+<!-- ============================================================ -->
+<div class="mood-label">PR Detail — Diff View with TOC + Curtain</div>
+<div style="display:flex; gap:16px; align-items:flex-start;">
+
+  <!-- TOC sidebar -->
+  <div class="mood-toc">
+    <input class="toc-filter" placeholder="Filter files..." type="text">
+    <div class="toc-file viewed">
+      <span class="check phui-icon-view phui-font-fa fa-check"></span>
+      <span>src/main.go</span>
+      <span class="stats">+12 -3</span>
+    </div>
+    <div class="toc-file">
+      <span style="width:14px;display:inline-block;"></span>
+      <span>src/handler.go</span>
+      <span class="stats">+45 -12</span>
+    </div>
+    <div class="toc-file">
+      <span style="width:14px;display:inline-block;"></span>
+      <span>pkg/util.go</span>
+      <span class="stats">+5 -0</span>
+    </div>
+    <div class="toc-progress">
+      1/3 files reviewed
+      <div class="progress-bar"><div class="progress-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- Diff area -->
+  <div style="flex:1; min-width:0;">
+    <div class="phui-box phui-box-border" style="overflow:hidden;">
+      <div class="mood-changeset-header">
+        <span class="phui-icon-view phui-font-fa fa-file-code-o" style="opacity:0.5;"></span>
+        src/main.go
+        <span class="stats">
+          <span class="add-stat">+12</span> <span class="del-stat">-3</span>
+        </span>
+      </div>
+      <table class="mood-diff-table">
+        <tr class="diff-hunk"><td class="line-num"></td><td class="line-num"></td><td class="gutter"></td><td>@@ -8,6 +8,8 @@ package main</td></tr>
+        <tr><td class="line-num">8</td><td class="line-num">8</td><td class="gutter"></td><td>import (</td></tr>
+        <tr><td class="line-num">9</td><td class="line-num">9</td><td class="gutter"></td><td>    "fmt"</td></tr>
+        <tr><td class="line-num">10</td><td class="line-num">10</td><td class="gutter"></td><td>    "net/http"</td></tr>
+        <tr class="diff-add"><td class="line-num"></td><td class="line-num">11</td><td class="gutter">+</td><td>    "log"</td></tr>
+        <tr class="diff-add"><td class="line-num"></td><td class="line-num">12</td><td class="gutter">+</td><td>    "time"</td></tr>
+        <tr><td class="line-num">11</td><td class="line-num">13</td><td class="gutter"></td><td>)</td></tr>
+        <tr><td class="line-num">12</td><td class="line-num">14</td><td class="gutter"></td><td></td></tr>
+      </table>
+
+      <!-- Context expansion -->
+      <div class="mood-context-expand">
+        <span class="phui-icon-view phui-font-fa fa-arrows-v" style="margin-right:4px;"></span>
+        Show 20 more lines
+      </div>
+
+      <table class="mood-diff-table">
+        <tr class="diff-hunk"><td class="line-num"></td><td class="line-num"></td><td class="gutter"></td><td>@@ -30,7 +32,12 @@ func main() {</td></tr>
+        <tr><td class="line-num">30</td><td class="line-num">32</td><td class="gutter"></td><td>func setupRoutes(mux *http.ServeMux) {</td></tr>
+        <tr class="diff-del"><td class="line-num">31</td><td class="line-num"></td><td class="gutter">-</td><td>    mux.HandleFunc("/", handleIndex)</td></tr>
+        <tr class="diff-add"><td class="line-num"></td><td class="line-num">33</td><td class="gutter">+</td><td>    mux.HandleFunc("/", handleDashboard)</td></tr>
+        <tr class="diff-add"><td class="line-num"></td><td class="line-num">34</td><td class="gutter">+</td><td>    mux.HandleFunc("/pr/", handlePR)</td></tr>
+        <tr class="diff-add"><td class="line-num"></td><td class="line-num">35</td><td class="gutter">+</td><td>    mux.HandleFunc("/paste/", handlePaste)</td></tr>
+        <tr><td class="line-num">32</td><td class="line-num">36</td><td class="gutter"></td><td>}</td></tr>
+      </table>
+
+      <!-- Inline comment -->
+      <div class="mood-inline-comment">
+        <div class="mood-inline-header">
+          <img src="https://avatars.githubusercontent.com/u/1?v=4" style="width:20px; height:20px; border-radius:3px;">
+          <strong>alice</strong>
+          <span style="color:#6b748c;">commented 2 min ago</span>
+          <span class="time"><span class="phui-icon-view phui-font-fa fa-clock-o"></span></span>
+        </div>
+        <div class="mood-inline-body">
+          Should this use a chi router instead of the default mux? It'd give us path params.
+          <div class="mood-suggestion">
+            <div class="mood-suggestion-header">Suggested change</div>
+            <div class="del">-    mux.HandleFunc("/pr/", handlePR)</div>
+            <div class="add">+    r.Get("/pr/{owner}/{repo}/{number}", handlePR)</div>
+          </div>
+        </div>
+        <div class="mood-inline-actions">
+          <a><span class="phui-icon-view phui-font-fa fa-reply"></span> Reply</a>
+          <a><span class="phui-icon-view phui-font-fa fa-check"></span> Done</a>
+          <a><span class="phui-icon-view phui-font-fa fa-check-circle"></span> Accept Suggestion</a>
+        </div>
+      </div>
+
+      <table class="mood-diff-table">
+        <tr><td class="line-num">33</td><td class="line-num">37</td><td class="gutter"></td><td></td></tr>
+        <tr class="diff-add"><td class="line-num"></td><td class="line-num">38</td><td class="gutter">+</td><td>func handleDashboard(w http.ResponseWriter, r *http.Request) {</td></tr>
+        <tr class="diff-add"><td class="line-num"></td><td class="line-num">39</td><td class="gutter">+</td><td>    log.Printf("dashboard request: %s", r.URL.Path)</td></tr>
+        <tr class="diff-add"><td class="line-num"></td><td class="line-num">40</td><td class="gutter">+</td><td>    start := time.Now()</td></tr>
+        <tr class="diff-add"><td class="line-num"></td><td class="line-num">41</td><td class="gutter">+</td><td>    // fetch user's PRs</td></tr>
+        <tr class="diff-add"><td class="line-num"></td><td class="line-num">42</td><td class="gutter">+</td><td>    fmt.Fprintf(w, "dashboard loaded in %v", time.Since(start))</td></tr>
+        <tr class="diff-add"><td class="line-num"></td><td class="line-num">43</td><td class="gutter">+</td><td>}</td></tr>
+      </table>
+    </div>
+
+    <!-- Review form -->
+    <div style="margin-top:16px;">
+      <div class="mood-review-form">
+        <textarea placeholder="Leave a review comment..."></textarea>
+        <div class="form-footer">
+          <span class="pending">1 pending comment</span>
+          <button style="padding:4px 12px; border-radius:3px; border:1px solid #C7CCD9; background:linear-gradient(to bottom, #ffffff, #f1f0f1); color:#464C5C; cursor:pointer; font-size:12px;">Comment</button>
+          <button style="padding:4px 12px; border-radius:3px; border:1px solid #139543; background:linear-gradient(to bottom, #23BB5B, #139543); color:#fff; cursor:pointer; font-size:12px;">Accept</button>
+          <button style="padding:4px 12px; border-radius:3px; border:1px solid #b33225; background:linear-gradient(to bottom, #d25454, #b33225); color:#fff; cursor:pointer; font-size:12px;">Request Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Curtain sidebar -->
+  <div class="mood-curtain">
+    <div class="phui-box phui-box-border" style="padding:16px; margin-bottom:16px;">
+      <div style="font-weight:600; margin-bottom:12px; font-size:13px;">Reviewers</div>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <img src="https://avatars.githubusercontent.com/u/1?v=4" style="width:24px; height:24px; border-radius:3px;">
+        <span style="font-size:13px;">alice</span>
+        <span class="phui-tag-view phui-tag-shade-green phui-tag-type-shade" style="margin-left:auto;"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-check mrs"></span>Accepted</span></span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <img src="https://avatars.githubusercontent.com/u/2?v=4" style="width:24px; height:24px; border-radius:3px;">
+        <span style="font-size:13px;">bob</span>
+        <span class="phui-tag-view phui-tag-shade-orange phui-tag-type-shade" style="margin-left:auto;"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-clock-o mrs"></span>Waiting</span></span>
+      </div>
+    </div>
+
+    <div class="phui-box phui-box-border" style="padding:16px; margin-bottom:16px;">
+      <div style="font-weight:600; margin-bottom:12px; font-size:13px;">Labels</div>
+      <span class="phui-tag-view phui-tag-shade-blue phui-tag-type-shade"><span class="phui-tag-core">enhancement</span></span>
+      <span class="phui-tag-view phui-tag-shade-red phui-tag-type-shade"><span class="phui-tag-core">bug</span></span>
+    </div>
+
+    <div class="phui-box phui-box-border" style="padding:16px; margin-bottom:16px;">
+      <div style="font-weight:600; margin-bottom:12px; font-size:13px;">Herald Matches</div>
+      <div style="font-size:12px; margin-bottom:6px;">
+        <span class="phui-icon-view phui-font-fa fa-shield mrs" style="color:#136cb2;"></span>
+        <strong>Auto-assign reviewers</strong>
+      </div>
+      <div style="font-size:11px; color:#6b748c; margin-left:20px;">
+        When files match <code>src/**/*.go</code> → add reviewer <strong>alice</strong>
+      </div>
+    </div>
+
+    <div class="phui-box phui-box-border" style="padding:16px; margin-bottom:16px;">
+      <div style="font-weight:600; margin-bottom:12px; font-size:13px;">Properties</div>
+      <div class="phui-property-list-key">Author</div>
+      <div class="phui-property-list-value">nikhilramakrishnan</div>
+      <div class="phui-property-list-key">Base</div>
+      <div class="phui-property-list-value">main</div>
+      <div class="phui-property-list-key">Head</div>
+      <div class="phui-property-list-value">feature/broadcast-ui</div>
+      <div class="phui-property-list-key">Updated</div>
+      <div class="phui-property-list-value">2 hours ago</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button style="width:100%; padding:8px; border-radius:3px; border:1px solid #139543; background:linear-gradient(to bottom, #23BB5B, #139543); color:#fff; cursor:pointer; font-size:13px; font-weight:600; text-shadow:0 1px 0 rgba(0,0,0,.2);">
+        <span class="phui-icon-view phui-font-fa fa-code-fork mrs"></span>Squash &amp; Merge
+      </button>
+      <button style="width:100%; padding:8px; border-radius:3px; border:1px solid #C7CCD9; background:linear-gradient(to bottom, #ffffff, #f1f0f1); color:#464C5C; cursor:pointer; font-size:13px;">
+        <span class="phui-icon-view phui-font-fa fa-times mrs"></span>Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TIMELINE -->
+<!-- ============================================================ -->
+<div class="mood-label" style="margin-top:40px;">Timeline — PR Conversation</div>
+<div class="phui-box phui-box-border phui-object-box" style="padding:16px;">
+  <div class="phui-timeline-view">
+    <div class="phui-timeline-event-view" style="display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #e3e4e8;">
+      <div style="width:32px; height:32px; border-radius:50%; background:#139543; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <i class="fa fa-check" style="color:#fff; font-size:14px;"></i>
+      </div>
+      <div>
+        <div class="phui-timeline-title" style="font-size:13px;"><strong>alice</strong> approved this pull request</div>
+        <div class="phui-timeline-extra" style="font-size:12px; color:#6b748c;">2 hours ago</div>
+      </div>
+    </div>
+    <div class="phui-timeline-event-view" style="display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #e3e4e8;">
+      <img src="https://avatars.githubusercontent.com/u/1?v=4" style="width:32px; height:32px; border-radius:50%; flex-shrink:0;">
+      <div style="flex:1;">
+        <div class="phui-timeline-title" style="font-size:13px;"><strong>alice</strong> commented</div>
+        <div class="phui-timeline-extra" style="font-size:12px; color:#6b748c; margin-bottom:8px;">2 hours ago</div>
+        <div style="background:#f6f8fa; border:1px solid #e3e4e8; border-radius:4px; padding:12px; font-size:13px; line-height:1.5;">
+          Looks great overall! One small suggestion on the router choice — see inline comment. Otherwise LGTM.
+        </div>
+      </div>
+    </div>
+    <div class="phui-timeline-event-view" style="display:flex; gap:12px; padding:12px 0;">
+      <div style="width:32px; height:32px; border-radius:50%; background:#136cb2; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <i class="fa fa-code" style="color:#fff; font-size:14px;"></i>
+      </div>
+      <div>
+        <div class="phui-timeline-title" style="font-size:13px;"><strong>nikhilramakrishnan</strong> pushed 2 commits</div>
+        <div class="phui-timeline-extra" style="font-size:12px; color:#6b748c;">3 hours ago</div>
+        <div style="margin-top:6px; font-size:12px;">
+          <code style="background:#f6f8fa; padding:2px 6px; border-radius:3px; font-size:11px;">a1b2c3d</code> feat: add broadcast UI<br>
+          <code style="background:#f6f8fa; padding:2px 6px; border-radius:3px; font-size:11px;">e4f5g6h</code> fix: handle edge case in FPL data
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- REPO BROWSER -->
+<!-- ============================================================ -->
+<div class="mood-label" style="margin-top:40px;">Repository Browser</div>
+<div class="phui-box phui-box-border phui-object-box">
+  <div class="phui-header-shell">
+    <div class="phui-header-view" style="display:flex; align-items:center;">
+      <h1 class="phui-header-header" style="flex:1;"><span class="phui-header-icon phui-icon-view phui-font-fa fa-book"></span>nikhilr/ghabricator</h1>
+      <span class="phui-tag-view phui-tag-shade-blue phui-tag-type-shade" style="margin-right:8px;"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-code-fork mrs"></span>main</span></span>
+      <button style="padding:4px 12px; border-radius:3px; border:1px solid #c7ccd9; background:#fff; cursor:pointer; font-size:12px;">
+        <span class="phui-icon-view phui-font-fa fa-search mrs"></span>Go to file
+      </button>
+    </div>
+  </div>
+  <table class="mood-file-tree">
+    <tr>
+      <td class="ft-icon"><span class="phui-icon-view phui-font-fa fa-folder" style="color:#54aeff;"></span></td>
+      <td class="ft-name"><a href="#">cmd/</a></td>
+      <td class="ft-msg">feat: add broadcast UI</td>
+      <td class="ft-date">2 hours ago</td>
+    </tr>
+    <tr>
+      <td class="ft-icon"><span class="phui-icon-view phui-font-fa fa-folder" style="color:#54aeff;"></span></td>
+      <td class="ft-name"><a href="#">internal/</a></td>
+      <td class="ft-msg">refactor: clean up handlers</td>
+      <td class="ft-date">1 day ago</td>
+    </tr>
+    <tr>
+      <td class="ft-icon"><span class="phui-icon-view phui-font-fa fa-folder" style="color:#54aeff;"></span></td>
+      <td class="ft-name"><a href="#">webroot/</a></td>
+      <td class="ft-msg">update static assets</td>
+      <td class="ft-date">5 days ago</td>
+    </tr>
+    <tr>
+      <td class="ft-icon"><span class="phui-icon-view phui-font-fa fa-file-text-o"></span></td>
+      <td class="ft-name"><a href="#">go.mod</a></td>
+      <td class="ft-msg">bump dependencies</td>
+      <td class="ft-date">3 days ago</td>
+    </tr>
+    <tr>
+      <td class="ft-icon"><span class="phui-icon-view phui-font-fa fa-file-text-o"></span></td>
+      <td class="ft-name"><a href="#">go.sum</a></td>
+      <td class="ft-msg">bump dependencies</td>
+      <td class="ft-date">3 days ago</td>
+    </tr>
+    <tr>
+      <td class="ft-icon"><span class="phui-icon-view phui-font-fa fa-file-text-o"></span></td>
+      <td class="ft-name"><a href="#">main.go</a></td>
+      <td class="ft-msg">initial commit</td>
+      <td class="ft-date">2 weeks ago</td>
+    </tr>
+    <tr>
+      <td class="ft-icon"><span class="phui-icon-view phui-font-fa fa-file-text-o"></span></td>
+      <td class="ft-name"><a href="#">README.md</a></td>
+      <td class="ft-msg">update documentation</td>
+      <td class="ft-date">1 week ago</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- COMMAND PALETTE -->
+<!-- ============================================================ -->
+<div class="mood-label" style="margin-top:40px;">Command Palette (Cmd+K)</div>
+<div style="padding:40px 0; background:#f0f1f3; border-radius:8px;">
+  <div class="mood-palette">
+    <input class="mood-palette-input" type="text" value="auth handler" placeholder="Search or type a command...">
+    <div class="mood-palette-results">
+      <div class="mood-palette-item active">
+        <span class="icon"><span class="phui-icon-view phui-font-fa fa-file-code-o"></span></span>
+        internal/server/auth_handler.go
+        <span class="hint">Jump to file</span>
+      </div>
+      <div class="mood-palette-item">
+        <span class="icon"><span class="phui-icon-view phui-font-fa fa-folder-o"></span></span>
+        internal/auth/
+        <span class="hint">Browse directory</span>
+      </div>
+      <div class="mood-palette-item">
+        <span class="icon"><span class="phui-icon-view phui-font-fa fa-code-fork"></span></span>
+        #18 Fix auth token refresh
+        <span class="hint">Pull Request</span>
+      </div>
+      <div class="mood-palette-item">
+        <span class="icon"><span class="phui-icon-view phui-font-fa fa-search"></span></span>
+        Search for "auth handler"
+        <span class="hint">Code search</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAGS & BADGES -->
+<!-- ============================================================ -->
+<div class="mood-label" style="margin-top:40px;">Tags &amp; Badges</div>
+<div class="phui-box phui-box-border" style="padding:16px; display:flex; flex-wrap:wrap; gap:8px;">
+  <span class="phui-tag-view phui-tag-shade-green phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-check mrs"></span>Accepted</span></span>
+  <span class="phui-tag-view phui-tag-shade-orange phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-warning mrs"></span>Needs Revision</span></span>
+  <span class="phui-tag-view phui-tag-shade-blue phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-eye mrs"></span>Needs Review</span></span>
+  <span class="phui-tag-view phui-tag-shade-indigo phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-code-fork mrs"></span>Merged</span></span>
+  <span class="phui-tag-view phui-tag-shade-red phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-times mrs"></span>Closed</span></span>
+  <span class="phui-tag-view phui-tag-shade-grey phui-tag-type-shade"><span class="phui-tag-core">Draft</span></span>
+  <span class="phui-tag-view phui-tag-shade-blue phui-tag-type-shade"><span class="phui-tag-core">enhancement</span></span>
+  <span class="phui-tag-view phui-tag-shade-red phui-tag-type-shade"><span class="phui-tag-core">bug</span></span>
+  <span class="phui-tag-view phui-tag-shade-yellow phui-tag-type-shade"><span class="phui-tag-core">help wanted</span></span>
+  <span class="phui-tag-view phui-tag-shade-violet phui-tag-type-shade"><span class="phui-tag-core">documentation</span></span>
+</div>
+
+<!-- ============================================================ -->
+<!-- BUTTONS -->
+<!-- ============================================================ -->
+<div class="mood-label" style="margin-top:24px;">Buttons</div>
+<div class="phui-box phui-box-border" style="padding:16px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+  <button style="padding:6px 16px; border-radius:3px; border:1px solid #139543; background:linear-gradient(to bottom, #23BB5B, #139543); color:#fff; cursor:pointer; font-size:13px; font-weight:600; text-shadow:0 1px 0 rgba(0,0,0,.2);">
+    <span class="phui-icon-view phui-font-fa fa-check mrs"></span>Accept Revision
+  </button>
+  <button style="padding:6px 16px; border-radius:3px; border:1px solid #b33225; background:linear-gradient(to bottom, #d25454, #b33225); color:#fff; cursor:pointer; font-size:13px; font-weight:600; text-shadow:0 1px 0 rgba(0,0,0,.2);">
+    <span class="phui-icon-view phui-font-fa fa-times mrs"></span>Request Changes
+  </button>
+  <button style="padding:6px 16px; border-radius:3px; border:1px solid #C7CCD9; background:linear-gradient(to bottom, #ffffff, #f1f0f1); color:#464C5C; cursor:pointer; font-size:13px;">
+    <span class="phui-icon-view phui-font-fa fa-comment mrs"></span>Comment
+  </button>
+  <button style="padding:6px 16px; border-radius:3px; border:1px solid #2980b9; background:linear-gradient(to bottom, #3498db, #2980b9); color:#fff; cursor:pointer; font-size:13px; font-weight:600; text-shadow:0 1px 0 rgba(0,0,0,.2);">
+    <span class="phui-icon-view phui-font-fa fa-code-fork mrs"></span>Squash &amp; Merge
+  </button>
+  <button style="padding:6px 16px; border-radius:3px; border:1px solid #C7CCD9; background:linear-gradient(to bottom, #ffffff, #f1f0f1); color:#92969D; cursor:pointer; font-size:13px;">
+    Disabled
+  </button>
+</div>
+
+<!-- ============================================================ -->
+<!-- DARK MODE -->
+<!-- ============================================================ -->
+<div class="mood-label" style="margin-top:40px;">Dark Mode</div>
+<div class="dark-panel">
+
+  <div class="mood-label" style="margin-top:0;">Dashboard</div>
+  <div class="phui-box phui-box-border phui-object-box" style="margin-bottom:16px;">
+    <div class="phui-header-shell">
+      <div class="phui-header-view">
+        <h1 class="phui-header-header"><span class="phui-header-icon phui-icon-view phui-font-fa fa-pencil"></span>Authored</h1>
+      </div>
+    </div>
+    <ul class="phui-oi-list-view">
+      <li class="phui-oi phui-oi-bar-color-blue phui-oi-with-image">
+        <div class="phui-oi-frame">
+          <div class="phui-oi-frame-content">
+            <div class="phui-oi-image" style="background-image:url(https://avatars.githubusercontent.com/u/6330920?v=4)"></div>
+            <div class="phui-oi-content-box">
+              <div class="phui-oi-table"><div class="phui-oi-table-row"><div class="phui-oi-col1">
+                <div class="phui-oi-name">
+                  <a href="#" class="phui-oi-link">Add sports broadcast UI with full FPL integration</a>
+                  <span class="phui-tag-view phui-tag-shade-green phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-check mrs"></span>Accepted</span></span>
+                </div>
+                <div class="phui-oi-content">
+                  <ul class="phui-oi-attributes">
+                    <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-user mrs"></span>nikhilramakrishnan</li>
+                    <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-github"></span> aelkady/Superclub#22</li>
+                    <li class="phui-oi-attribute"><span class="phui-icon-view phui-font-fa fa-clock-o"></span> 2 hours ago</li>
+                  </ul>
+                </div>
+              </div></div></div>
+            </div>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="mood-label">Diff View</div>
+  <div class="phui-box phui-box-border" style="overflow:hidden;">
+    <div class="mood-changeset-header">
+      <span class="phui-icon-view phui-font-fa fa-file-code-o" style="opacity:0.5;"></span>
+      src/main.go
+      <span class="stats">
+        <span class="add-stat">+12</span> <span class="del-stat">-3</span>
+      </span>
+    </div>
+    <table class="mood-diff-table">
+      <tr class="diff-hunk"><td class="line-num"></td><td class="line-num"></td><td class="gutter"></td><td>@@ -30,7 +32,12 @@ func main() {</td></tr>
+      <tr><td class="line-num">30</td><td class="line-num">32</td><td class="gutter"></td><td>func setupRoutes(mux *http.ServeMux) {</td></tr>
+      <tr class="diff-del"><td class="line-num">31</td><td class="line-num"></td><td class="gutter">-</td><td>    mux.HandleFunc("/", handleIndex)</td></tr>
+      <tr class="diff-add"><td class="line-num"></td><td class="line-num">33</td><td class="gutter">+</td><td>    mux.HandleFunc("/", handleDashboard)</td></tr>
+      <tr class="diff-add"><td class="line-num"></td><td class="line-num">34</td><td class="gutter">+</td><td>    mux.HandleFunc("/pr/", handlePR)</td></tr>
+      <tr><td class="line-num">32</td><td class="line-num">35</td><td class="gutter"></td><td>}</td></tr>
+    </table>
+    <div class="mood-inline-comment">
+      <div class="mood-inline-header">
+        <img src="https://avatars.githubusercontent.com/u/1?v=4" style="width:20px; height:20px; border-radius:3px;">
+        <strong>alice</strong>
+        <span style="color:#8b949e;">commented 2 min ago</span>
+      </div>
+      <div class="mood-inline-body">Consider using chi router for path params.</div>
+      <div class="mood-inline-actions">
+        <a><span class="phui-icon-view phui-font-fa fa-reply"></span> Reply</a>
+        <a><span class="phui-icon-view phui-font-fa fa-check"></span> Done</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="mood-label">Command Palette</div>
+  <div style="padding:24px 0;">
+    <div class="mood-palette">
+      <input class="mood-palette-input" type="text" value="main.go" placeholder="Search or type a command...">
+      <div class="mood-palette-results">
+        <div class="mood-palette-item active">
+          <span class="icon"><span class="phui-icon-view phui-font-fa fa-file-code-o"></span></span>
+          cmd/ghabricator/main.go
+          <span class="hint">Jump to file</span>
+        </div>
+        <div class="mood-palette-item">
+          <span class="icon"><span class="phui-icon-view phui-font-fa fa-file-code-o"></span></span>
+          internal/server/main.go
+          <span class="hint">Jump to file</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mood-label">Tags</div>
+  <div style="display:flex; flex-wrap:wrap; gap:8px;">
+    <span class="phui-tag-view phui-tag-shade-green phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-check mrs"></span>Accepted</span></span>
+    <span class="phui-tag-view phui-tag-shade-orange phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-warning mrs"></span>Needs Revision</span></span>
+    <span class="phui-tag-view phui-tag-shade-blue phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-eye mrs"></span>Needs Review</span></span>
+    <span class="phui-tag-view phui-tag-shade-indigo phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-code-fork mrs"></span>Merged</span></span>
+    <span class="phui-tag-view phui-tag-shade-red phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa fa-times mrs"></span>Closed</span></span>
+  </div>
+</div>
+
+</div><!-- end mood-section -->
+
+</body>
+</html>
