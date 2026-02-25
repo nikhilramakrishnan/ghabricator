@@ -100,7 +100,7 @@ func (s *Server) handlePR(w http.ResponseWriter, r *http.Request) {
 		content.WriteString(`<div class="phui-box phui-box-border phui-object-box mlt mlr">`)
 		content.WriteString(`<div class="phui-header-shell"><div class="phui-header-view"><h1 class="phui-header-header">`)
 		content.WriteString(`<span class="phui-header-icon phui-icon-view phui-font-fa fa-file-text-o"></span>Summary</h1></div></div>`)
-		content.WriteString(`<div style="padding:16px"><div class="phabricator-remarkup" style="font-size:13px;line-height:1.5">`)
+		content.WriteString(`<div style="padding:16px"><div class="phabricator-remarkup" style="font-size:13px;line-height:1.5;overflow-wrap:break-word;word-break:break-word;">`)
 		content.WriteString(remarkup.Render(pr.Body))
 		content.WriteString(`</div></div></div>`)
 	}
@@ -209,6 +209,33 @@ func (s *Server) handlePR(w http.ResponseWriter, r *http.Request) {
 		extraCSS = []string{"/res/pkg/dark/differential.pkg.css"}
 	}
 
+	// Context expansion script — wires up "show more lines" clicks.
+	contextScript := template.HTML(fmt.Sprintf(`(function(){
+  var owner=%q, repo=%q, ref=%q;
+  document.addEventListener('click', function(e) {
+    var td = e.target.closest('[data-action="context-expand"]');
+    if (!td) return;
+    var path = td.getAttribute('data-path');
+    var start = td.getAttribute('data-start');
+    var end = td.getAttribute('data-end');
+    var cs = td.getAttribute('data-cs');
+    td.textContent = 'Loading\u2026';
+    td.style.cursor = 'wait';
+    fetch('/api/context?owner='+encodeURIComponent(owner)+'&repo='+encodeURIComponent(repo)+
+      '&ref='+encodeURIComponent(ref)+'&path='+encodeURIComponent(path)+
+      '&start='+start+'&end='+end+'&cs='+cs)
+    .then(function(r){return r.json()})
+    .then(function(data){
+      var tr = td.closest('tr');
+      if (tr && data.html) {
+        tr.insertAdjacentHTML('afterend', data.html);
+        tr.remove();
+      }
+    })
+    .catch(function(){td.textContent='Failed to load context';td.style.cursor='pointer'});
+  });
+})()`, owner, repo, pr.Head.Ref))
+
 	templates.RenderPage(w, templates.PageData{
 		Title:         fmt.Sprintf("D%d: %s", number, pr.Title),
 		Theme:         theme,
@@ -220,6 +247,7 @@ func (s *Server) handlePR(w http.ResponseWriter, r *http.Request) {
 		FileTree:      fileTree,
 		ExtraCSS:      extraCSS,
 		ExtraJS:       []string{"/res/pkg/differential.pkg.js"},
+		InlineScript:  contextScript,
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs: []templates.Crumb{
@@ -367,16 +395,16 @@ func renderTimelineEvent(b *strings.Builder, ev timelineEvent, isLast bool) {
 
 	// Content
 	if isMajor {
-		b.WriteString(`<div style="flex:1;">`)
+		b.WriteString(`<div style="flex:1;min-width:0;">`)
 	} else {
-		b.WriteString(`<div>`)
+		b.WriteString(`<div style="min-width:0;">`)
 	}
 	fmt.Fprintf(b, `<div class="phui-timeline-title" style="font-size:13px;"><strong>%s</strong> %s</div>`,
 		esc(ev.Author.Login), esc(ev.Action))
 	if isMajor {
 		fmt.Fprintf(b, `<div class="phui-timeline-extra" style="font-size:12px; color:#6b748c; margin-bottom:8px;">%s</div>`,
 			esc(timeAgo(ev.CreatedAt)))
-		b.WriteString(`<div style="background:#f6f8fa; border:1px solid #e3e4e8; border-radius:4px; padding:12px; font-size:13px; line-height:1.5;">`)
+		b.WriteString(`<div style="background:#f6f8fa; border:1px solid #e3e4e8; border-radius:4px; padding:12px; font-size:13px; line-height:1.5; overflow-wrap:break-word; word-break:break-word;">`)
 		b.WriteString(remarkup.Render(ev.Body))
 		b.WriteString(`</div>`)
 	} else {

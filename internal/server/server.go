@@ -89,6 +89,9 @@ func (s *Server) routes() {
 	// PR actions (merge / close / reopen)
 	s.mux.Handle("POST /api/merge", s.auth.RequireAuth(http.HandlerFunc(s.handleMerge)))
 	s.mux.Handle("POST /api/close", s.auth.RequireAuth(http.HandlerFunc(s.handleClose)))
+
+	// Diff context expansion
+	s.mux.Handle("GET /api/context", s.auth.RequireAuth(http.HandlerFunc(s.handleContext)))
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {

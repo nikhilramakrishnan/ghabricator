@@ -155,7 +155,7 @@ func RenderChangeset(cs Changeset, metaRef string, comments []InlineComment) tem
 	for hunkIdx, hunk := range cs.Hunks {
 		// "Show more" separator at the top of the first hunk if it doesn't start at line 1.
 		if hunkIdx == 0 && hunk.NewStart > 1 {
-			renderShowMore(&b, fmt.Sprintf("Context above (lines 1\u2013%d)", hunk.NewStart-1))
+			renderShowMore(&b, fmt.Sprintf("Context above (lines 1\u2013%d)", hunk.NewStart-1), path, 1, hunk.NewStart-1, cs.ID)
 		}
 
 		// "Show more" separator between hunks.
@@ -164,7 +164,7 @@ func RenderChangeset(cs Changeset, metaRef string, comments []InlineComment) tem
 			prevEndNew := prevHunk.NewStart + prevHunk.NewCount
 			gapLines := hunk.NewStart - prevEndNew
 			if gapLines > 0 {
-				renderShowMore(&b, fmt.Sprintf("Show %d more lines", gapLines))
+				renderShowMore(&b, fmt.Sprintf("Show %d more lines", gapLines), path, prevEndNew, hunk.NewStart-1, cs.ID)
 			}
 		}
 
@@ -191,7 +191,8 @@ func RenderChangeset(cs Changeset, metaRef string, comments []InlineComment) tem
 
 		// "Context below" separator after the last hunk.
 		if hunkIdx == len(cs.Hunks)-1 {
-			renderShowMore(&b, "Context below")
+			lastEnd := hunk.NewStart + hunk.NewCount
+			renderShowMore(&b, "Context below", path, lastEnd, lastEnd+20, cs.ID)
 		}
 	}
 
@@ -202,14 +203,49 @@ func RenderChangeset(cs Changeset, metaRef string, comments []InlineComment) tem
 	return template.HTML(b.String())
 }
 
-// renderShowMore writes a static "show more lines" separator row.
-func renderShowMore(b *strings.Builder, label string) {
+// renderShowMore writes a clickable "show more lines" separator row.
+func renderShowMore(b *strings.Builder, label, path string, startLine, endLine, csID int) {
 	b.WriteString(`<tr class="show-more">`)
 	b.WriteString(`<th class="num"></th>`)
-	fmt.Fprintf(b, `<td class="show-more-content" colspan="5" style="text-align:center;padding:6px;background:rgba(55,55,55,.04);color:#6b748c;font-size:12px;cursor:default">`+
+	fmt.Fprintf(b, `<td class="show-more-content" colspan="5" data-action="context-expand" data-path="%s" data-start="%d" data-end="%d" data-cs="%d" `+
+		`style="text-align:center;padding:6px;background:rgba(55,55,55,.04);color:#6b748c;font-size:12px;cursor:pointer">`+
 		`<span class="phui-icon-view phui-font-fa fa-ellipsis-h mrs"></span>`+
-		`%s</td>`, template.HTMLEscapeString(label))
+		`%s</td>`,
+		template.HTMLEscapeString(path), startLine, endLine, csID,
+		template.HTMLEscapeString(label))
 	b.WriteString(`</tr>`)
+}
+
+// RenderContextRows produces <tr> elements for expanded context lines.
+// fileContent is the full file text, startLine/endLine are 1-indexed inclusive.
+func RenderContextRows(path, fileContent string, startLine, endLine, csID int) string {
+	lines := strings.Split(fileContent, "\n")
+	if startLine < 1 {
+		startLine = 1
+	}
+	if endLine > len(lines) {
+		endLine = len(lines)
+	}
+	if startLine > endLine {
+		return ""
+	}
+
+	// Highlight the context slice
+	slice := lines[startLine-1 : endLine]
+	highlighted := HighlightLines(path, slice)
+
+	var b strings.Builder
+	for i, hl := range highlighted {
+		lineNum := startLine + i
+		fmt.Fprintf(&b, `<tr>`)
+		fmt.Fprintf(&b, `<td class="n" data-n="%d" id="C%dOL%d"></td>`, lineNum, csID, lineNum)
+		fmt.Fprintf(&b, `<td data-copy-mode="copy-l">%s</td>`, hl)
+		fmt.Fprintf(&b, `<td class="n" data-n="%d" id="C%dNL%d"></td>`, lineNum, csID, lineNum)
+		fmt.Fprintf(&b, `<td class="copy"></td>`)
+		fmt.Fprintf(&b, `<td colspan="2" data-copy-mode="copy-r">%s</td>`, hl)
+		b.WriteString(`</tr>`)
+	}
+	return b.String()
 }
 
 // renderInlineCommentRow writes a single inline comment as a <tr> inside the diff table.

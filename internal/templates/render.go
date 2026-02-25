@@ -37,6 +37,7 @@ type PageData struct {
 	Crumbs      []Crumb
 	HeaderTitle template.HTML
 	HeaderIcon  string
+	InlineScript template.HTML // Inline JS injected before </body>
 	// Nav state
 	UserLogin     string
 	UserAvatarURL string
