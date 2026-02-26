@@ -100,7 +100,7 @@ func (s *Server) handlePR(w http.ResponseWriter, r *http.Request) {
 		content.WriteString(`<div class="phui-box phui-box-border phui-object-box mlt mlr">`)
 		content.WriteString(`<div class="phui-header-shell"><div class="phui-header-view"><h1 class="phui-header-header">`)
 		content.WriteString(`<span class="phui-header-icon phui-icon-view phui-font-fa fa-file-text-o"></span>Summary</h1></div></div>`)
-		content.WriteString(`<div style="padding:16px"><div class="phabricator-remarkup" style="font-size:13px;line-height:1.5;overflow-wrap:break-word;word-break:break-word;">`)
+		content.WriteString(`<div style="padding:10px 12px"><div class="phabricator-remarkup" style="font-size:13px;line-height:1.5;overflow-wrap:break-word;word-break:break-word;">`)
 		content.WriteString(remarkup.Render(pr.Body))
 		content.WriteString(`</div></div></div>`)
 	}
@@ -364,7 +364,7 @@ func renderTimeline(b *strings.Builder, pr *ghapi.PullRequest, reviews []ghapi.R
 		return
 	}
 
-	b.WriteString(`<div class="phui-box phui-box-border phui-object-box" style="padding:12px; margin:16px 0;">`)
+	b.WriteString(`<div class="phui-box phui-box-border phui-object-box" style="padding:10px 12px; margin:12px 0 0 0;">`)
 	b.WriteString(`<div class="phui-timeline-view">`)
 	for i, ev := range events {
 		renderTimelineEvent(b, ev, i == len(events)-1)
@@ -382,7 +382,7 @@ func renderTimelineEvent(b *strings.Builder, ev timelineEvent, isLast bool) {
 	if isLast {
 		borderStyle = ""
 	}
-	fmt.Fprintf(b, `<div class="phui-timeline-event-view" style="display:flex; gap:12px; padding:12px 0;%s">`, borderStyle)
+	fmt.Fprintf(b, `<div class="phui-timeline-event-view" style="display:flex; gap:10px; padding:10px 0;%s">`, borderStyle)
 
 	// Icon circle or avatar
 	if isMajor && ev.Author.AvatarURL != "" {

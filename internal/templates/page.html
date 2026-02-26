@@ -97,8 +97,15 @@
       text-decoration: none;
     }
     .phabricator-main-menu-alerts .alert-notifications:hover { color: rgba(255,255,255,0.8); }
-    /* Tighten main column padding */
+    /* Density: tighten spacing across the page */
     .device-desktop .phui-two-column-content { padding: 0 16px; }
+    .phui-two-column-view .phui-two-column-header { margin-bottom: 8px; }
+    .phui-two-column-view .phui-two-column-header .phui-header-shell { padding: 12px 16px 8px; }
+    .phui-two-column-header .phui-header-header { font-size: 18px; }
+    .phui-two-column-view .phui-two-column-content .phui-object-box { margin: 0 0 12px 0; }
+    .phui-object-box .phui-header-shell { padding: 8px 12px; border-bottom: 1px solid #e3e4e8; }
+    .phui-two-column-content .phui-two-column-row { margin-top: 0; }
+    .phui-side-column .phui-box { margin-bottom: 12px; }
     /* Timeline comment overflow */
     .phui-timeline-view code { overflow-wrap: break-word; word-break: break-all; }
     .phui-timeline-view pre { overflow-x: auto; max-width: 100%; }
