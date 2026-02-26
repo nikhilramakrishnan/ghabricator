@@ -249,6 +249,7 @@ func (s *Server) handlePR(w http.ResponseWriter, r *http.Request) {
 		ExtraCSS:      extraCSS,
 		ExtraJS:       []string{"/res/pkg/differential.pkg.js"},
 		InlineScript:  contextScript,
+		NavActive:     "revisions",
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs: []templates.Crumb{

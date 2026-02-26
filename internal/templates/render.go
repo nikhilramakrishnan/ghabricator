@@ -39,6 +39,7 @@ type PageData struct {
 	HeaderIcon  string
 	InlineScript template.JS // Inline JS injected before </body>
 	// Nav state
+	NavActive     string // "revisions", "paste", "herald", "search"
 	UserLogin     string
 	UserAvatarURL string
 }

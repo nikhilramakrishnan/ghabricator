@@ -85,6 +85,7 @@ func (s *Server) handleHeraldList(w http.ResponseWriter, r *http.Request) {
 		HeaderTitle:   template.HTML("Herald"),
 		HeaderIcon:    "fa-bullhorn",
 		Content:       template.HTML(buf.String()),
+		NavActive:     "herald",
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs: []templates.Crumb{
@@ -107,6 +108,7 @@ func (s *Server) handleHeraldNew(w http.ResponseWriter, r *http.Request) {
 		HeaderTitle:   template.HTML("New Herald Rule"),
 		HeaderIcon:    "fa-bullhorn",
 		Content:       template.HTML(content),
+		NavActive:     "herald",
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs: []templates.Crumb{
@@ -141,6 +143,7 @@ func (s *Server) handleHeraldView(w http.ResponseWriter, r *http.Request) {
 		HeaderTitle:   template.HTML(template.HTMLEscapeString(rule.Name)),
 		HeaderIcon:    "fa-bullhorn",
 		Content:       template.HTML(content),
+		NavActive:     "herald",
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs: []templates.Crumb{

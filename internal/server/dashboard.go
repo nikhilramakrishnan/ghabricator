@@ -53,6 +53,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		HeaderTitle:   template.HTML("Active Revisions"),
 		HeaderIcon:    "fa-th-list",
 		Content:       template.HTML(buf.String()),
+		NavActive:     "revisions",
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs: []templates.Crumb{

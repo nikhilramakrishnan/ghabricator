@@ -97,6 +97,7 @@ func (s *Server) handlePasteList(w http.ResponseWriter, r *http.Request) {
 		HeaderTitle:   "Paste",
 		HeaderIcon:    "fa-clipboard",
 		Content:       template.HTML(buf.String()),
+		NavActive:     "paste",
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs: []templates.Crumb{
@@ -165,6 +166,7 @@ func (s *Server) handlePasteNew(w http.ResponseWriter, r *http.Request) {
 		HeaderTitle:   "Create Paste",
 		HeaderIcon:    "fa-plus",
 		Content:       template.HTML(buf.String()),
+		NavActive:     "paste",
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs: []templates.Crumb{
@@ -319,6 +321,7 @@ func (s *Server) handlePasteView(w http.ResponseWriter, r *http.Request) {
 		HeaderIcon:    "fa-clipboard",
 		Content:       template.HTML(buf.String()),
 		Curtain:       template.HTML(curtain.String()),
+		NavActive:     "paste",
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs: []templates.Crumb{

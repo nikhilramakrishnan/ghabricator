@@ -11,6 +11,11 @@
   {{range .ExtraCSS}}<link rel="stylesheet" href="{{.}}">
   {{end}}
   <style>
+    /* Override Phabricator menu to match moodboard */
+    .phui-theme-blindigo .phabricator-main-menu-background { background: #292e36; }
+    .device-desktop .phabricator-main-menu { height: 44px; padding-right: 0; }
+    .phabricator-main-menu .phui-icon-view,
+    .phabricator-main-menu .phui-font-fa { color: inherit; }
     .phui-flank-header { display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-bottom:1px solid rgba(55,55,55,.15); }
     .phui-flank-header-text { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; opacity:.7; }
     .phui-flank-toggle { background:none; border:none; cursor:pointer; opacity:.5; font-size:14px; padding:2px 6px; color:inherit; }
@@ -18,11 +23,80 @@
     .phui-formation-wrapper.collapsed .phui-flank-view { width:0 !important; min-width:0 !important; overflow:hidden; border-right:none; }
     .phui-formation-wrapper.collapsed .phui-flank-toggle-show { display:inline-block; position:absolute; left:4px; top:4px; z-index:10; background:#e8e8ed; border:1px solid #c7ccd9; cursor:pointer; padding:4px 8px; border-radius:3px; font-size:14px; color:#464C5C; }
     .phui-formation-wrapper:not(.collapsed) .phui-flank-toggle-show { display:none; }
-    .phabricator-main-menu { display:flex; align-items:center; }
-    .phabricator-main-menu-brand { display:flex; align-items:center; gap:6px; }
-    .phabricator-core-user-menu, .phabricator-core-login-button { margin-left:auto; }
-    .phabricator-main-menu-alerts { margin-left:8px; }
-    .phabricator-main-menu-href:hover { background: rgba(255,255,255,.1); color: #fff !important; }
+    .phabricator-main-menu {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 4px;
+    }
+    .phabricator-main-menu-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      margin-right: 16px;
+      text-decoration: none;
+      float: none;
+      height: auto;
+      padding: 0;
+    }
+    .phabricator-main-menu-brand:hover { background: none; }
+    .phabricator-main-menu-brand .brand-icon {
+      font-size: 18px;
+      opacity: 0.8;
+    }
+    .phabricator-main-menu-href {
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      padding: 8px 12px;
+      text-decoration: none;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .phabricator-main-menu-href:hover { color: #fff; background: rgba(255,255,255,0.08); }
+    .phabricator-main-menu-href.nav-active { color: #fff; background: rgba(255,255,255,0.12); }
+    .phabricator-main-menu .nav-spacer { flex: 1; }
+    .phabricator-core-user-menu {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.8);
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .phabricator-core-user-menu img {
+      width: 28px;
+      height: 28px;
+      border-radius: 3px;
+    }
+    .phabricator-core-login-button {
+      margin-left: auto;
+      color: rgba(255,255,255,0.8);
+      font-size: 13px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .phabricator-main-menu-alerts {
+      margin-left: 8px;
+      float: none;
+      display: flex;
+      align-items: center;
+      padding: 0;
+    }
+    .phabricator-main-menu-alerts .alert-notifications {
+      color: rgba(255,255,255,0.5);
+      font-size: 16px;
+      padding: 4px 8px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .phabricator-main-menu-alerts .alert-notifications:hover { color: rgba(255,255,255,0.8); }
     /* Dark mode fixes */
     .phui-theme-dark .phui-comment-form-view { background: #1B2028; border-color: #464C5C; }
     .phui-theme-dark .phui-comment-action-bar { border-color: #464C5C; }
@@ -256,36 +330,36 @@
 
       <div class="phabricator-main-menu phabricator-main-menu-background" data-sigil="phabricator-main-menu">
         <a class="phabricator-main-menu-brand" href="/">
-          <span class="phabricator-main-menu-eye"></span>
-          <span class="phabricator-wordmark">Ghabricator</span>
+          <span class="brand-icon phui-icon-view phui-font-fa fa-cog"></span>
+          <span>Ghabricator</span>
         </a>
         {{if .UserLogin}}
-        <div class="phabricator-main-menu-group" style="display:flex;align-items:center;gap:2px;margin-left:16px">
-          <a href="/dashboard" class="phabricator-main-menu-href" title="Dashboard" style="padding:6px 10px;color:rgba(255,255,255,.75);text-decoration:none;font-size:13px;border-radius:3px">
-            <span class="phui-icon-view phui-font-fa fa-code-fork mrs"></span>Revisions
-          </a>
-          <a href="/paste" class="phabricator-main-menu-href" title="Paste" style="padding:6px 10px;color:rgba(255,255,255,.75);text-decoration:none;font-size:13px;border-radius:3px">
-            <span class="phui-icon-view phui-font-fa fa-clipboard mrs"></span>Paste
-          </a>
-          <a href="/herald" class="phabricator-main-menu-href" title="Herald" style="padding:6px 10px;color:rgba(255,255,255,.75);text-decoration:none;font-size:13px;border-radius:3px">
-            <span class="phui-icon-view phui-font-fa fa-bullhorn mrs"></span>Herald
-          </a>
-          <a href="/search" class="phabricator-main-menu-href" title="Search" style="padding:6px 10px;color:rgba(255,255,255,.75);text-decoration:none;font-size:13px;border-radius:3px">
-            <span class="phui-icon-view phui-font-fa fa-search mrs"></span>Search
-          </a>
-        </div>
-        <a href="/auth/logout" title="Log out ({{.UserLogin}})" class="phabricator-core-user-menu" style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;font-size:13px">
-          {{if .UserAvatarURL}}<img src="{{.UserAvatarURL}}" alt="" style="width:28px;height:28px;border-radius:3px">{{else}}<span class="phui-icon-view phui-font-fa fa-user"></span>{{end}}
+        <a href="/dashboard" class="phabricator-main-menu-href{{if eq .NavActive "revisions"}} nav-active{{end}}">
+          <span class="phui-icon-view phui-font-fa fa-code-fork"></span> Revisions
+        </a>
+        <a href="/paste" class="phabricator-main-menu-href{{if eq .NavActive "paste"}} nav-active{{end}}">
+          <span class="phui-icon-view phui-font-fa fa-clipboard"></span> Paste
+        </a>
+        <a href="/herald" class="phabricator-main-menu-href{{if eq .NavActive "herald"}} nav-active{{end}}">
+          <span class="phui-icon-view phui-font-fa fa-shield"></span> Herald
+        </a>
+        <a href="/search" class="phabricator-main-menu-href{{if eq .NavActive "search"}} nav-active{{end}}">
+          <span class="phui-icon-view phui-font-fa fa-search"></span> Search
+        </a>
+        <div class="nav-spacer"></div>
+        <a href="/auth/logout" title="Log out ({{.UserLogin}})" class="phabricator-core-user-menu">
+          {{if .UserAvatarURL}}<img src="{{.UserAvatarURL}}" alt="">{{else}}<span class="phui-icon-view phui-font-fa fa-user"></span>{{end}}
           <span>{{.UserLogin}}</span>
         </a>
         {{else}}
-        <a href="/auth/github" title="Sign in with GitHub" class="phabricator-core-login-button">
+        <div class="nav-spacer"></div>
+        <a href="/auth/github" class="phabricator-core-login-button">
           <span class="phui-icon-view phui-font-fa fa-github"></span> Sign in
         </a>
         {{end}}
         <div class="phabricator-main-menu-alerts">
           <a href="/api/theme?mode={{.ThemeToggleMode}}" class="alert-notifications" title="Toggle theme">
-            <span class="phabricator-main-menu-alert-icon phui-icon-view phui-font-fa {{.ThemeToggleIcon}}"></span>
+            <span class="phui-icon-view phui-font-fa {{.ThemeToggleIcon}}"></span>
           </a>
         </div>
       </div>

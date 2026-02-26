@@ -69,6 +69,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		HeaderTitle:   template.HTML("Search"),
 		HeaderIcon:    "fa-search",
 		Content:       template.HTML(buf.String()),
+		NavActive:     "search",
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs: []templates.Crumb{
