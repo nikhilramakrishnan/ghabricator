@@ -136,7 +136,7 @@ func (s *Server) renderFileView(w http.ResponseWriter, owner, repo, ref, path, f
 	fmt.Fprintf(&buf, ` <span style="font-weight:400;font-size:12px;color:#6b748c">%s</span></h1>`, formatSize(file.Size))
 	buf.WriteString(`</div>`)
 	if file.HTMLURL != "" {
-		fmt.Fprintf(&buf, `<a href="%s" target="_blank" class="phui-button-view button-grey" style="margin-right:8px;font-size:12px"><span class="phui-icon-view phui-font-fa fa-github mrs"></span>GitHub</a>`,
+		fmt.Fprintf(&buf, `<a href="%s" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-size:12px;color:#6b748c;border:1px solid #c7ccd9;border-radius:3px;text-decoration:none;white-space:nowrap"><span class="phui-icon-view phui-font-fa fa-github" style="font-size:14px"></span>GitHub</a>`,
 			template.HTMLEscapeString(file.HTMLURL))
 	}
 	buf.WriteString(`</div>`)
@@ -215,40 +215,46 @@ func buildRepoCrumbs(owner, repo, ref, path string, isDir bool) []templates.Crum
 }
 
 func buildRepoCurtain(info *ghapi.RepoInfo) string {
-	var curtain strings.Builder
-	curtain.WriteString(`<div class="phui-box phui-box-border phui-object-box phui-curtain-view">`)
-
-	// Repo details
-	curtain.WriteString(`<div class="phui-curtain-panel">`)
-	curtain.WriteString(`<div class="phui-curtain-panel-header">Repository</div>`)
-	curtain.WriteString(`<div class="phui-curtain-panel-body">`)
-	fmt.Fprintf(&curtain, `<div><span class="phui-icon-view phui-font-fa fa-github mrs"></span>%s</div>`, template.HTMLEscapeString(info.FullName))
-	if info.Description != "" {
-		fmt.Fprintf(&curtain, `<div style="margin-top:4px;color:#6b748c;font-size:13px">%s</div>`, template.HTMLEscapeString(info.Description))
-	}
-	visIcon := "fa-globe"
-	visLabel := "Public"
-	if info.Private {
-		visIcon = "fa-lock"
-		visLabel = "Private"
-	}
-	fmt.Fprintf(&curtain, `<div style="margin-top:8px"><span class="phui-icon-view phui-font-fa %s mrs"></span>%s</div>`, visIcon, visLabel)
-	fmt.Fprintf(&curtain, `<div><span class="phui-icon-view phui-font-fa fa-star mrs"></span>%d stars</div>`, info.Stars)
-	fmt.Fprintf(&curtain, `<div><span class="phui-icon-view phui-font-fa fa-code-fork mrs"></span>%d forks</div>`, info.Forks)
-	curtain.WriteString(`</div></div>`)
+	var c strings.Builder
+	c.WriteString(`<div class="phui-box phui-box-border phui-object-box phui-curtain-view">`)
 
 	// Actions
-	curtain.WriteString(`<div class="phui-curtain-panel">`)
-	curtain.WriteString(`<div class="phui-curtain-panel-header">Actions</div>`)
-	curtain.WriteString(`<div class="phui-curtain-panel-body">`)
-	curtain.WriteString(`<ul class="phabricator-action-list-view">`)
-	fmt.Fprintf(&curtain, `<li class="phabricator-action-view action-has-icon"><a href="%s" target="_blank" class="phabricator-action-view-item"><span class="phabricator-action-view-icon phui-icon-view phui-font-fa fa-github"></span>View on GitHub</a></li>`,
+	c.WriteString(`<div class="phui-curtain-panel">`)
+	c.WriteString(`<div class="phui-curtain-panel-header">Actions</div>`)
+	c.WriteString(`<div class="phui-curtain-panel-body">`)
+	c.WriteString(`<ul class="phabricator-action-list-view">`)
+	fmt.Fprintf(&c, `<li class="phabricator-action-view action-has-icon"><a href="%s" target="_blank" class="phabricator-action-view-item"><span class="phabricator-action-view-icon phui-icon-view phui-font-fa fa-github"></span>View on GitHub</a></li>`,
 		template.HTMLEscapeString(info.HTMLURL))
-	curtain.WriteString(`</ul>`)
-	curtain.WriteString(`</div></div>`)
+	c.WriteString(`</ul>`)
+	c.WriteString(`</div></div>`)
 
-	curtain.WriteString(`</div>`)
-	return curtain.String()
+	// Details as property list
+	c.WriteString(`<div class="phui-curtain-panel">`)
+	c.WriteString(`<div class="phui-curtain-panel-header">Details</div>`)
+	c.WriteString(`<div class="phui-curtain-panel-body">`)
+	c.WriteString(`<table class="phui-property-list-view" style="width:100%">`)
+
+	visLabel := "Public"
+	visIcon := "fa-globe"
+	visShade := "blue"
+	if info.Private {
+		visLabel = "Private"
+		visIcon = "fa-lock"
+		visShade = "orange"
+	}
+	fmt.Fprintf(&c, `<tr><th style="color:#6b748c;font-weight:normal;padding:2px 8px 2px 0;white-space:nowrap;font-size:13px">Visibility</th><td style="padding:2px 0;font-size:13px"><span class="phui-tag-view phui-tag-shade-%s phui-tag-type-shade"><span class="phui-tag-core"><span class="phui-icon-view phui-font-fa %s mrs"></span>%s</span></span></td></tr>`, visShade, visIcon, visLabel)
+	fmt.Fprintf(&c, `<tr><th style="color:#6b748c;font-weight:normal;padding:2px 8px 2px 0;white-space:nowrap;font-size:13px">Stars</th><td style="padding:2px 0;font-size:13px">%d</td></tr>`, info.Stars)
+	fmt.Fprintf(&c, `<tr><th style="color:#6b748c;font-weight:normal;padding:2px 8px 2px 0;white-space:nowrap;font-size:13px">Forks</th><td style="padding:2px 0;font-size:13px">%d</td></tr>`, info.Forks)
+
+	if info.Description != "" {
+		fmt.Fprintf(&c, `<tr><th style="color:#6b748c;font-weight:normal;padding:2px 8px 2px 0;white-space:nowrap;font-size:13px;vertical-align:top">About</th><td style="padding:2px 0;font-size:13px">%s</td></tr>`, template.HTMLEscapeString(info.Description))
+	}
+
+	c.WriteString(`</table>`)
+	c.WriteString(`</div></div>`)
+
+	c.WriteString(`</div>`)
+	return c.String()
 }
 
 func formatSize(bytes int) string {
