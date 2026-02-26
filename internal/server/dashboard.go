@@ -211,6 +211,60 @@ func renderPRSection(title, icon string, prs []dashboardPR) string {
 	return buf.String()
 }
 
+func (s *Server) handleAPIDashboard(w http.ResponseWriter, r *http.Request) {
+	client := auth.GitHubClientFromContext(r.Context())
+	sess := auth.SessionFromContext(r.Context())
+	login := sess.Login
+
+	authored := s.searchPRs(r, client, fmt.Sprintf("is:open is:pr author:%s", login))
+	reviewing := s.searchPRs(r, client, fmt.Sprintf("is:open is:pr review-requested:%s", login))
+
+	resp := APIDashboardResponse{
+		Authored:        dashboardPRsToAPI(authored),
+		ReviewRequested: dashboardPRsToAPI(reviewing),
+	}
+	jsonOK(w, resp)
+}
+
+func dashboardPRsToAPI(prs []dashboardPR) []APIPRSummary {
+	result := make([]APIPRSummary, 0, len(prs))
+	for _, pr := range prs {
+		owner, repo := splitRepo(pr.Repo)
+		s := APIPRSummary{
+			Number: pr.Number,
+			Title:  pr.Title,
+			Owner:  owner,
+			Repo:   repo,
+			Author: APIUser{
+				Login:     pr.Author,
+				AvatarURL: pr.AvatarURL,
+			},
+			Draft:     pr.Draft,
+			UpdatedAt: pr.UpdatedAt,
+		}
+		for _, l := range pr.Labels {
+			s.Labels = append(s.Labels, APILabel{Name: l})
+		}
+		for _, u := range pr.Reviewers {
+			s.Reviewers = append(s.Reviewers, APIUser{
+				Login:     u.Login,
+				AvatarURL: u.AvatarURL,
+			})
+		}
+		result = append(result, s)
+	}
+	return result
+}
+
+func splitRepo(fullName string) (owner, repo string) {
+	for i := 0; i < len(fullName); i++ {
+		if fullName[i] == '/' {
+			return fullName[:i], fullName[i+1:]
+		}
+	}
+	return fullName, ""
+}
+
 func extractRepoFromURL(url string) string {
 	// https://api.github.com/repos/owner/repo → owner/repo
 	const prefix = "/repos/"

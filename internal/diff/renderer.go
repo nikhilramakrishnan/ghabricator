@@ -327,6 +327,16 @@ func renderRow(b *strings.Builder, csID int, row DiffRow) {
 	b.WriteString(`</tr>`)
 }
 
+// BuildDiffRows returns all diff rows for a changeset, flattened across hunks.
+func BuildDiffRows(cs Changeset) []DiffRow {
+	byHunk := buildRowsByHunk(cs)
+	var rows []DiffRow
+	for _, hr := range byHunk {
+		rows = append(rows, hr...)
+	}
+	return rows
+}
+
 // buildRowsByHunk converts a Changeset into rows grouped by hunk for the two-up view.
 // It pairs removed+added lines as modifications when they appear consecutively.
 func buildRowsByHunk(cs Changeset) [][]DiffRow {

@@ -96,6 +96,8 @@ func (s *Server) routes() {
 
 	// JSON API routes (SvelteKit frontend)
 	s.mux.HandleFunc("GET /api/auth/me", s.handleAPIAuthMe)
+	s.mux.Handle("GET /api/dashboard", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIDashboard)))
+	s.mux.Handle("GET /api/pr/{owner}/{repo}/{number}", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIPR)))
 }
 
 func (s *Server) handleAPIAuthMe(w http.ResponseWriter, r *http.Request) {
