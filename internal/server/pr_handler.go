@@ -364,7 +364,7 @@ func renderTimeline(b *strings.Builder, pr *ghapi.PullRequest, reviews []ghapi.R
 		return
 	}
 
-	b.WriteString(`<div class="phui-box phui-box-border phui-object-box" style="padding:16px; margin:16px 0;">`)
+	b.WriteString(`<div class="phui-box phui-box-border phui-object-box" style="padding:12px; margin:16px 0;">`)
 	b.WriteString(`<div class="phui-timeline-view">`)
 	for i, ev := range events {
 		renderTimelineEvent(b, ev, i == len(events)-1)
@@ -406,7 +406,7 @@ func renderTimelineEvent(b *strings.Builder, ev timelineEvent, isLast bool) {
 	if isMajor {
 		fmt.Fprintf(b, `<div class="phui-timeline-extra" style="font-size:12px; color:#6b748c; margin-bottom:8px;">%s</div>`,
 			esc(timeAgo(ev.CreatedAt)))
-		b.WriteString(`<div style="background:#f6f8fa; border:1px solid #e3e4e8; border-radius:4px; padding:12px; font-size:13px; line-height:1.5; overflow-wrap:break-word; word-break:break-word;">`)
+		b.WriteString(`<div style="background:#f6f8fa; border:1px solid #e3e4e8; border-radius:4px; padding:12px; font-size:13px; line-height:1.5; overflow-wrap:break-word; word-break:break-word; overflow-x:auto; max-width:100%;">`)
 		b.WriteString(remarkup.Render(ev.Body))
 		b.WriteString(`</div>`)
 	} else {
