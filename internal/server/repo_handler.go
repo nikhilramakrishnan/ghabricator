@@ -128,10 +128,6 @@ func (s *Server) renderDirView(w http.ResponseWriter, owner, repo, ref, path, fu
 func (s *Server) renderFileView(w http.ResponseWriter, owner, repo, ref, path, fullName string, file *ghapi.RepoFile, repoInfo *ghapi.RepoInfo, sess *auth.Session, theme string) {
 	var buf bytes.Buffer
 
-	// Syntax-highlighted source
-	lines := strings.Split(file.Content, "\n")
-	highlighted := diff.HighlightLines(file.Name, lines)
-
 	buf.WriteString(`<div class="phui-object-box">`)
 	buf.WriteString(`<div class="phui-header-shell" style="display:flex;align-items:center;justify-content:space-between">`)
 	buf.WriteString(`<div class="phui-header-view">`)
@@ -145,17 +141,32 @@ func (s *Server) renderFileView(w http.ResponseWriter, owner, repo, ref, path, f
 	}
 	buf.WriteString(`</div>`)
 
-	buf.WriteString(`<div class="phabricator-source-code-container">`)
-	buf.WriteString(`<table class="phabricator-source-code-view remarkup-code PhabricatorMonospaced chroma">`)
-	for i, hl := range highlighted {
-		lineNum := i + 1
-		buf.WriteString(`<tr>`)
-		fmt.Fprintf(&buf, `<th class="phabricator-source-line"><span>%d</span></th>`, lineNum)
-		fmt.Fprintf(&buf, `<td class="phabricator-source-code">%s</td>`, hl)
-		buf.WriteString(`</tr>`)
+	ext := strings.ToLower(filepath.Ext(file.Name))
+	switch ext {
+	case ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".bmp":
+		// Render image preview via GitHub raw URL
+		rawURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repo, ref, path)
+		buf.WriteString(`<div style="padding:24px;text-align:center;background:#f7f7f9">`)
+		fmt.Fprintf(&buf, `<img src="%s" style="max-width:100%%;border:1px solid #c7ccd9;border-radius:3px" alt="%s">`,
+			template.HTMLEscapeString(rawURL), template.HTMLEscapeString(file.Name))
+		buf.WriteString(`</div>`)
+	default:
+		// Syntax-highlighted source
+		lines := strings.Split(file.Content, "\n")
+		highlighted := diff.HighlightLines(file.Name, lines)
+
+		buf.WriteString(`<div class="phabricator-source-code-container">`)
+		buf.WriteString(`<table class="phabricator-source-code-view remarkup-code PhabricatorMonospaced chroma">`)
+		for i, hl := range highlighted {
+			lineNum := i + 1
+			buf.WriteString(`<tr>`)
+			fmt.Fprintf(&buf, `<th class="phabricator-source-line"><span>%d</span></th>`, lineNum)
+			fmt.Fprintf(&buf, `<td class="phabricator-source-code">%s</td>`, hl)
+			buf.WriteString(`</tr>`)
+		}
+		buf.WriteString(`</table>`)
+		buf.WriteString(`</div>`)
 	}
-	buf.WriteString(`</table>`)
-	buf.WriteString(`</div>`)
 	buf.WriteString(`</div>`)
 
 	// Curtain with repo info
