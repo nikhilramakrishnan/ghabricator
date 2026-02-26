@@ -93,6 +93,21 @@ func (s *Server) routes() {
 
 	// Diff context expansion
 	s.mux.Handle("GET /api/context", s.auth.RequireAuth(http.HandlerFunc(s.handleContext)))
+
+	// JSON API routes (SvelteKit frontend)
+	s.mux.HandleFunc("GET /api/auth/me", s.handleAPIAuthMe)
+}
+
+func (s *Server) handleAPIAuthMe(w http.ResponseWriter, r *http.Request) {
+	sess := s.auth.Store().GetFromRequest(r)
+	if sess == nil {
+		jsonError(w, "not authenticated", http.StatusUnauthorized)
+		return
+	}
+	jsonOK(w, map[string]string{
+		"login":     sess.Login,
+		"avatarURL": sess.AvatarURL,
+	})
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
