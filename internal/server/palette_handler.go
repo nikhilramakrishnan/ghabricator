@@ -18,6 +18,7 @@ type paletteResult struct {
 }
 
 func (s *Server) handlePalette(w http.ResponseWriter, r *http.Request) {
+	sess := auth.SessionFromContext(r.Context())
 	client := auth.GitHubClientFromContext(r.Context())
 	q := r.URL.Query().Get("q")
 	if q == "" {
@@ -49,6 +50,74 @@ func (s *Server) handlePalette(w http.ResponseWriter, r *http.Request) {
 				Hint: nav.hint,
 				Href: nav.href,
 			})
+		}
+	}
+
+	// User's own repos (prioritized over global search)
+	userRepos, _, err := client.Repositories.List(r.Context(), sess.Login, &gh.RepositoryListOptions{
+		Sort:        "updated",
+		Direction:   "desc",
+		ListOptions: gh.ListOptions{PerPage: 100},
+	})
+	if err != nil {
+		log.Printf("palette user repos error: %v", err)
+	} else {
+		count := 0
+		for _, repo := range userRepos {
+			if count >= 5 {
+				break
+			}
+			name := repo.GetFullName()
+			if fuzzyMatch(lq, name, nil) {
+				results = append(results, paletteResult{
+					Icon: "fa-database",
+					Text: name,
+					Hint: "Your repo",
+					Href: "/repo/" + name,
+				})
+				count++
+			}
+		}
+	}
+
+	// Repos the user contributes to / has starred
+	starredRepos, _, err := client.Activity.ListStarred(r.Context(), sess.Login, &gh.ActivityListStarredOptions{
+		Sort:        "updated",
+		Direction:   "desc",
+		ListOptions: gh.ListOptions{PerPage: 50},
+	})
+	if err != nil {
+		log.Printf("palette starred repos error: %v", err)
+	} else {
+		count := 0
+		for _, sr := range starredRepos {
+			if count >= 3 {
+				break
+			}
+			repo := sr.GetRepository()
+			if repo == nil {
+				continue
+			}
+			name := repo.GetFullName()
+			if fuzzyMatch(lq, name, nil) {
+				// Avoid duplicates from own repos
+				dup := false
+				for _, r := range results {
+					if r.Href == "/repo/"+name {
+						dup = true
+						break
+					}
+				}
+				if !dup {
+					results = append(results, paletteResult{
+						Icon: "fa-star",
+						Text: name,
+						Hint: "Starred",
+						Href: "/repo/" + name,
+					})
+					count++
+				}
+			}
 		}
 	}
 
@@ -84,22 +153,31 @@ func (s *Server) handlePalette(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Search GitHub for repos (quick, 3 results)
-	repos, _, err := client.Search.Repositories(r.Context(), q, &gh.SearchOptions{
-		Sort:        "stars",
-		Order:       "desc",
-		ListOptions: gh.ListOptions{PerPage: 3},
-	})
-	if err != nil {
-		log.Printf("palette repo search error: %v", err)
-	} else {
-		for _, repo := range repos.Repositories {
-			results = append(results, paletteResult{
-				Icon: "fa-database",
-				Text: repo.GetFullName(),
-				Hint: "Repository",
-				Href: "/repo/" + repo.GetFullName(),
-			})
+	// Global repo search (only if no user repos matched)
+	hasRepoResults := false
+	for _, r := range results {
+		if r.Hint == "Your repo" || r.Hint == "Starred" {
+			hasRepoResults = true
+			break
+		}
+	}
+	if !hasRepoResults {
+		repos, _, err := client.Search.Repositories(r.Context(), q, &gh.SearchOptions{
+			Sort:        "stars",
+			Order:       "desc",
+			ListOptions: gh.ListOptions{PerPage: 3},
+		})
+		if err != nil {
+			log.Printf("palette repo search error: %v", err)
+		} else {
+			for _, repo := range repos.Repositories {
+				results = append(results, paletteResult{
+					Icon: "fa-database",
+					Text: repo.GetFullName(),
+					Hint: "Repository",
+					Href: "/repo/" + repo.GetFullName(),
+				})
+			}
 		}
 	}
 
