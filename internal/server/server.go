@@ -90,6 +90,9 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/merge", s.auth.RequireAuth(http.HandlerFunc(s.handleMerge)))
 	s.mux.Handle("POST /api/close", s.auth.RequireAuth(http.HandlerFunc(s.handleClose)))
 
+	// Command palette
+	s.mux.Handle("GET /api/palette", s.auth.RequireAuth(http.HandlerFunc(s.handlePalette)))
+
 	// Diff context expansion
 	s.mux.Handle("GET /api/context", s.auth.RequireAuth(http.HandlerFunc(s.handleContext)))
 }
