@@ -59,19 +59,7 @@ func (s *Server) handleRepoView(w http.ResponseWriter, r *http.Request) {
 func (s *Server) renderDirView(w http.ResponseWriter, owner, repo, ref, path, fullName string, entries []ghapi.RepoEntry, repoInfo *ghapi.RepoInfo, sess *auth.Session, theme string) {
 	var buf bytes.Buffer
 
-	// Branch selector
-	writeBranchSelector(&buf, owner, repo, ref, path)
-
 	buf.WriteString(`<div class="phui-box phui-box-border phui-object-box">`)
-	buf.WriteString(`<div class="phui-header-shell">`)
-	buf.WriteString(`<div class="phui-header-view">`)
-	buf.WriteString(`<span class="phui-header-icon phui-icon-view phui-font-fa fa-folder-open"></span>`)
-	fmt.Fprintf(&buf, `<h1 class="phui-header-header">%s</h1>`, fullName)
-	if path != "" {
-		fmt.Fprintf(&buf, `<span style="margin-left:8px;color:#6b748c">/ %s</span>`, template.HTMLEscapeString(path))
-	}
-	buf.WriteString(`</div>`)
-	buf.WriteString(`</div>`)
 
 	buf.WriteString(`<table class="aphront-table-view">`)
 	buf.WriteString(`<tr><th>Name</th><th>Type</th><th>Size</th></tr>`)
@@ -128,10 +116,9 @@ func (s *Server) renderDirView(w http.ResponseWriter, owner, repo, ref, path, fu
 	templates.RenderPage(w, templates.PageData{
 		Title:         dirName + " - Diffusion",
 		Theme:         theme,
-		HeaderTitle:   template.HTML(fullName),
-		HeaderIcon:    "fa-folder-open",
 		Content:       template.HTML(buf.String()),
 		Curtain:       template.HTML(curtain),
+		NavActive:     "repos",
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs:        buildRepoCrumbs(owner, repo, ref, path, true),
@@ -141,32 +128,25 @@ func (s *Server) renderDirView(w http.ResponseWriter, owner, repo, ref, path, fu
 func (s *Server) renderFileView(w http.ResponseWriter, owner, repo, ref, path, fullName string, file *ghapi.RepoFile, repoInfo *ghapi.RepoInfo, sess *auth.Session, theme string) {
 	var buf bytes.Buffer
 
-	// Branch selector
-	writeBranchSelector(&buf, owner, repo, ref, path)
-
-	// File header
-	buf.WriteString(`<div class="phui-object-box">`)
-	buf.WriteString(`<div class="phui-header-shell" style="display:flex;align-items:center;justify-content:space-between">`)
-	buf.WriteString(`<div class="phui-header-view">`)
-	icon := diff.FileIcon(file.Name)
-	fmt.Fprintf(&buf, `<span class="phui-header-icon phui-icon-view phui-font-fa %s"></span>`, icon)
-	fmt.Fprintf(&buf, `<h1 class="phui-header-header">%s</h1>`, template.HTMLEscapeString(file.Name))
-	fmt.Fprintf(&buf, `<span style="margin-left:12px;color:#6b748c;font-size:13px">%s</span>`, formatSize(file.Size))
-	buf.WriteString(`</div>`)
-
-	// Raw link
-	if file.HTMLURL != "" {
-		fmt.Fprintf(&buf, `<a href="%s" target="_blank" class="phui-button-view button-grey" style="margin-right:8px"><span class="phui-icon-view phui-font-fa fa-github mrs"></span>View on GitHub</a>`,
-			template.HTMLEscapeString(file.HTMLURL))
-	}
-	buf.WriteString(`</div>`)
-
 	// Syntax-highlighted source
 	lines := strings.Split(file.Content, "\n")
 	highlighted := diff.HighlightLines(file.Name, lines)
 
+	buf.WriteString(`<div class="phui-object-box">`)
+	buf.WriteString(`<div class="phui-header-shell" style="display:flex;align-items:center;justify-content:space-between">`)
+	buf.WriteString(`<div class="phui-header-view">`)
+	icon := diff.FileIcon(file.Name)
+	fmt.Fprintf(&buf, `<h1 class="phui-header-header"><span class="phui-header-icon phui-icon-view phui-font-fa %s"></span>%s`, icon, template.HTMLEscapeString(file.Name))
+	fmt.Fprintf(&buf, ` <span style="font-weight:400;font-size:12px;color:#6b748c">%s</span></h1>`, formatSize(file.Size))
+	buf.WriteString(`</div>`)
+	if file.HTMLURL != "" {
+		fmt.Fprintf(&buf, `<a href="%s" target="_blank" class="phui-button-view button-grey" style="margin-right:8px;font-size:12px"><span class="phui-icon-view phui-font-fa fa-github mrs"></span>GitHub</a>`,
+			template.HTMLEscapeString(file.HTMLURL))
+	}
+	buf.WriteString(`</div>`)
+
 	buf.WriteString(`<div class="phabricator-source-code-container">`)
-	buf.WriteString(`<table class="phabricator-source-code-view remarkup-code PhabricatorMonospaced">`)
+	buf.WriteString(`<table class="phabricator-source-code-view remarkup-code PhabricatorMonospaced chroma">`)
 	for i, hl := range highlighted {
 		lineNum := i + 1
 		buf.WriteString(`<tr>`)
@@ -184,30 +164,15 @@ func (s *Server) renderFileView(w http.ResponseWriter, owner, repo, ref, path, f
 	templates.RenderPage(w, templates.PageData{
 		Title:         file.Name + " - Diffusion",
 		Theme:         theme,
-		HeaderTitle:   template.HTML(fullName),
-		HeaderIcon:    icon,
 		Content:       template.HTML(buf.String()),
 		Curtain:       template.HTML(curtain),
+		NavActive:     "repos",
 		UserLogin:     sess.Login,
 		UserAvatarURL: sess.AvatarURL,
 		Crumbs:        buildRepoCrumbs(owner, repo, ref, path, false),
 	})
 }
 
-func writeBranchSelector(buf *bytes.Buffer, owner, repo, ref, path string) {
-	buf.WriteString(`<div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">`)
-	buf.WriteString(`<span class="phui-icon-view phui-font-fa fa-code-fork" style="color:#6b748c"></span>`)
-	buf.WriteString(`<form method="GET" style="display:inline">`)
-	// Preserve path — form action is the current page
-	action := fmt.Sprintf("/repo/%s/%s", owner, repo)
-	if path != "" {
-		action += "/" + path
-	}
-	fmt.Fprintf(buf, `<input type="text" name="ref" value="%s" placeholder="branch or tag" style="padding:4px 8px;border:1px solid #c7ccd9;border-radius:3px;font-size:13px;width:200px">`, template.HTMLEscapeString(ref))
-	buf.WriteString(` <button type="submit" class="phui-button-view button-grey" style="font-size:12px;padding:4px 10px">Switch</button>`)
-	buf.WriteString(`</form>`)
-	buf.WriteString(`</div>`)
-}
 
 func buildRepoCrumbs(owner, repo, ref, path string, isDir bool) []templates.Crumb {
 	crumbs := []templates.Crumb{
