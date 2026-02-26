@@ -210,11 +210,12 @@ func (s *Server) handlePR(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Context expansion script — wires up "show more lines" clicks.
-	contextScript := template.HTML(fmt.Sprintf(`(function(){
+	contextScript := template.JS(fmt.Sprintf(`(function(){
   var owner=%q, repo=%q, ref=%q;
   document.addEventListener('click', function(e) {
     var td = e.target.closest('[data-action="context-expand"]');
     if (!td) return;
+    e.stopPropagation();
     var path = td.getAttribute('data-path');
     var start = td.getAttribute('data-start');
     var end = td.getAttribute('data-end');
@@ -233,7 +234,7 @@ func (s *Server) handlePR(w http.ResponseWriter, r *http.Request) {
       }
     })
     .catch(function(){td.textContent='Failed to load context';td.style.cursor='pointer'});
-  });
+  }, true);
 })()`, owner, repo, pr.Head.Ref))
 
 	templates.RenderPage(w, templates.PageData{
