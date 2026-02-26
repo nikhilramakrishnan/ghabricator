@@ -1,41 +1,41 @@
 <script lang="ts">
   import { Breadcrumbs, PageShell } from '$lib/components/layout';
   import {
-    ObjectItemList, ObjectItem, Attribute, Tag, Button, InfoView
+    Box, ObjectItemList, ObjectItem, Attribute, Tag, InfoView
   } from '$lib/components/phui';
   import { apiFetch } from '$lib/api';
-  import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import type { APISearchResponse, APISearchPR, APISearchCodeResult, APISearchRepoResult } from '$lib/types';
+  import { page } from '$app/stores';
+  import type { APISearchResponse } from '$lib/types';
 
   const crumbs = [
     { name: 'Home', href: '/' },
     { name: 'Search' }
   ];
 
-  let query = $state($page.url.searchParams.get('q') ?? '');
-  let searchType = $state($page.url.searchParams.get('type') ?? 'pr');
-  let results = $state<APISearchResponse | null>(null);
-  let loading = $state(false);
-  let searched = $state(false);
+  const searchTypes = [
+    { value: 'prs', label: 'Pull Requests', icon: 'fa-code-fork' },
+    { value: 'code', label: 'Code', icon: 'fa-code' },
+    { value: 'repos', label: 'Repositories', icon: 'fa-database' },
+  ];
 
-  // Auto-search if URL has query params
-  $effect(() => {
-    const q = $page.url.searchParams.get('q');
-    const t = $page.url.searchParams.get('type');
-    if (q) {
-      query = q;
-      if (t) searchType = t;
-      doSearch();
-    }
-  });
+  let query = $state($page.url.searchParams.get('q') ?? '');
+  let searchType = $state($page.url.searchParams.get('type') ?? 'prs');
+  let results: APISearchResponse | null = $state(null);
+  let loading = $state(false);
+  let searched = $state(!!$page.url.searchParams.get('q'));
+
+  // Run search on initial load if query params present
+  if (query) {
+    doSearch();
+  }
 
   async function doSearch() {
     if (!query.trim()) return;
     loading = true;
     searched = true;
     try {
-      results = await apiFetch<APISearchResponse>(`/api/search?q=${encodeURIComponent(query)}&type=${searchType}`);
+      results = await apiFetch<APISearchResponse>(`/api/search?type=${searchType}&q=${encodeURIComponent(query)}`);
     } catch {
       results = null;
     } finally {
@@ -45,13 +45,26 @@
 
   function handleSubmit(e: Event) {
     e.preventDefault();
-    goto(`/search?q=${encodeURIComponent(query)}&type=${searchType}`, { replaceState: true });
+    const url = `/search?q=${encodeURIComponent(query)}&type=${searchType}`;
+    goto(url, { replaceState: true, keepFocus: true });
     doSearch();
   }
 
-  let hasResults = $derived(
-    results && ((results.prs?.length ?? 0) > 0 || (results.code?.length ?? 0) > 0 || (results.repos?.length ?? 0) > 0)
-  );
+  function selectType(t: string) {
+    searchType = t;
+    if (query.trim()) {
+      const url = `/search?q=${encodeURIComponent(query)}&type=${t}`;
+      goto(url, { replaceState: true, keepFocus: true });
+      doSearch();
+    }
+  }
+
+  const langColors: Record<string, string> = {
+    Go: '#00ADD8', TypeScript: '#3178C6', JavaScript: '#F7DF1E',
+    Python: '#3572A5', Rust: '#DEA584', Java: '#B07219',
+    Ruby: '#701516', PHP: '#4F5D95', 'C++': '#f34b7d',
+    C: '#555555', Shell: '#89e051',
+  };
 </script>
 
 <PageShell title="Search" icon="fa-search">
@@ -59,41 +72,50 @@
     <Breadcrumbs {crumbs} />
   {/snippet}
 
-  <div class="phui-box phui-box-border phui-object-box" style="padding:16px">
-    <form onsubmit={handleSubmit} style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <input
-        type="text"
-        bind:value={query}
-        placeholder="Search..."
-        class="aphront-form-input"
-        style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #c7ccd9;border-radius:3px;font-size:14px"
-      />
-      <select bind:value={searchType} style="padding:8px;border:1px solid #c7ccd9;border-radius:3px;font-size:13px">
-        <option value="pr">Pull Requests</option>
-        <option value="code">Code</option>
-        <option value="repo">Repositories</option>
-      </select>
-      <Button type="submit" color="green" icon="fa-search">Search</Button>
-    </form>
-  </div>
+  <Box border>
+    <div style="padding:16px">
+      <form onsubmit={handleSubmit}>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input
+            type="text"
+            bind:value={query}
+            placeholder="Search..."
+            class="aphront-form-input"
+            style="flex:1;padding:8px 12px;border:1px solid #c7ccd9;border-radius:3px;font-size:14px"
+          />
+          <button type="submit" class="mood-btn mood-btn-green" disabled={loading}>
+            <span class="phui-icon-view phui-font-fa fa-search mrs"></span>
+            Search
+          </button>
+        </div>
+      </form>
+
+      <div style="display:flex;gap:4px">
+        {#each searchTypes as st}
+          <button
+            type="button"
+            class="mood-btn {searchType === st.value ? 'mood-btn-blue' : 'mood-btn-default'}"
+            style="font-size:12px;padding:4px 12px"
+            onclick={() => selectType(st.value)}
+          >
+            <span class="phui-icon-view phui-font-fa {st.icon} mrs"></span>
+            {st.label}
+          </button>
+        {/each}
+      </div>
+    </div>
+  </Box>
 
   {#if loading}
-    <InfoView icon="fa-spinner">Searching...</InfoView>
-  {:else if searched && !hasResults}
-    <InfoView icon="fa-inbox">No results found.</InfoView>
-  {:else if results}
-
-    <!-- PR results -->
-    {#if results.prs?.length}
-      <div class="phui-box phui-box-border phui-object-box" style="margin-top:12px">
-        <div class="phui-header-shell">
-          <div class="phui-header-view">
-            <h1 class="phui-header-header">
-              <span class="phui-header-icon phui-icon-view phui-font-fa fa-code-fork"></span>
-              Pull Requests
-            </h1>
-          </div>
-        </div>
+    <div style="padding:24px;text-align:center;color:#6b748c">
+      <span class="phui-icon-view phui-font-fa fa-spinner fa-spin" style="margin-right:8px"></span>
+      Searching...
+    </div>
+  {:else if searched && results}
+    {#if searchType === 'prs' && results.prs}
+      {#if results.prs.length === 0}
+        <InfoView icon="fa-inbox">No pull requests found.</InfoView>
+      {:else}
         <ObjectItemList>
           {#each results.prs as pr}
             <ObjectItem
@@ -108,59 +130,40 @@
                 {/if}
               {/snippet}
               {#snippet attributes()}
-                <Attribute icon="fa-user">{pr.author}</Attribute>
                 <Attribute icon="fa-github">{pr.repo}#{pr.number}</Attribute>
+                <Attribute icon="fa-user">{pr.author}</Attribute>
                 <Attribute icon="fa-clock-o">{pr.updatedAt}</Attribute>
               {/snippet}
             </ObjectItem>
           {/each}
         </ObjectItemList>
-      </div>
-    {/if}
+      {/if}
 
-    <!-- Code results -->
-    {#if results.code?.length}
-      <div class="phui-box phui-box-border phui-object-box" style="margin-top:12px">
-        <div class="phui-header-shell">
-          <div class="phui-header-view">
-            <h1 class="phui-header-header">
-              <span class="phui-header-icon phui-icon-view phui-font-fa fa-file-code-o"></span>
-              Code
-            </h1>
-          </div>
-        </div>
-        <ObjectItemList>
-          {#each results.code as code}
-            <ObjectItem
-              title={code.path}
-              href="https://github.com/{code.repo}/blob/HEAD/{code.path}"
-              icon="fa-file-code-o"
-            >
-              {#snippet attributes()}
-                <Attribute icon="fa-github">{code.repo}</Attribute>
-              {/snippet}
-            </ObjectItem>
-            {#if code.fragment}
-              <div style="padding:4px 12px 12px 56px">
-                <pre style="background:#f6f8fa;border:1px solid #e3e4e8;border-radius:4px;padding:8px;font-size:12px;overflow-x:auto;margin:0">{code.fragment}</pre>
+    {:else if searchType === 'code' && results.code}
+      {#if results.code.length === 0}
+        <InfoView icon="fa-inbox">No code results found.</InfoView>
+      {:else}
+        {#each results.code as result}
+          <Box border>
+            <div style="padding:12px 16px">
+              <div style="font-size:13px;margin-bottom:6px">
+                <span class="phui-icon-view phui-font-fa fa-github mrs" style="color:#6b748c"></span>
+                <strong>{result.repo}</strong>
+                <span style="color:#6b748c;margin:0 4px">/</span>
+                <span style="color:#136CB2">{result.path}</span>
               </div>
-            {/if}
-          {/each}
-        </ObjectItemList>
-      </div>
-    {/if}
+              <div class="phabricator-source-code-container" style="max-height:200px;overflow:auto">
+                <pre class="PhabricatorMonospaced" style="margin:0;padding:8px;background:#f7f7f7;border-radius:3px;font-size:12px;overflow-x:auto">{@html result.fragment}</pre>
+              </div>
+            </div>
+          </Box>
+        {/each}
+      {/if}
 
-    <!-- Repo results -->
-    {#if results.repos?.length}
-      <div class="phui-box phui-box-border phui-object-box" style="margin-top:12px">
-        <div class="phui-header-shell">
-          <div class="phui-header-view">
-            <h1 class="phui-header-header">
-              <span class="phui-header-icon phui-icon-view phui-font-fa fa-database"></span>
-              Repositories
-            </h1>
-          </div>
-        </div>
+    {:else if searchType === 'repos' && results.repos}
+      {#if results.repos.length === 0}
+        <InfoView icon="fa-inbox">No repositories found.</InfoView>
+      {:else}
         <ObjectItemList>
           {#each results.repos as repo}
             {@const parts = repo.fullName.split('/')}
@@ -175,14 +178,19 @@
                   <Attribute>{repo.description}</Attribute>
                 {/if}
                 {#if repo.language}
-                  <Attribute icon="fa-code">{repo.language}</Attribute>
+                  <Attribute>
+                    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{langColors[repo.language] ?? '#6b748c'};margin-right:4px;vertical-align:middle"></span>
+                    {repo.language}
+                  </Attribute>
                 {/if}
                 <Attribute icon="fa-star">{repo.stars}</Attribute>
               {/snippet}
             </ObjectItem>
           {/each}
         </ObjectItemList>
-      </div>
+      {/if}
     {/if}
+  {:else if searched}
+    <InfoView icon="fa-inbox">No results found.</InfoView>
   {/if}
 </PageShell>
