@@ -80,6 +80,7 @@ func (s *Server) routes() {
 	s.mux.Handle("GET /herald/{id}/delete", s.auth.RequireAuth(http.HandlerFunc(s.handleHeraldDelete)))
 
 	// Repository browser
+	s.mux.Handle("GET /repos", s.auth.RequireAuth(http.HandlerFunc(s.handleRepoList)))
 	s.mux.Handle("GET /repo/{owner}/{repo}/{path...}", s.auth.RequireAuth(http.HandlerFunc(s.handleRepoView)))
 	s.mux.Handle("GET /repo/{owner}/{repo}", s.auth.RequireAuth(http.HandlerFunc(s.handleRepoView)))
 
@@ -89,9 +90,6 @@ func (s *Server) routes() {
 	// PR actions (merge / close / reopen)
 	s.mux.Handle("POST /api/merge", s.auth.RequireAuth(http.HandlerFunc(s.handleMerge)))
 	s.mux.Handle("POST /api/close", s.auth.RequireAuth(http.HandlerFunc(s.handleClose)))
-
-	// Command palette
-	s.mux.Handle("GET /api/palette", s.auth.RequireAuth(http.HandlerFunc(s.handlePalette)))
 
 	// Diff context expansion
 	s.mux.Handle("GET /api/context", s.auth.RequireAuth(http.HandlerFunc(s.handleContext)))
