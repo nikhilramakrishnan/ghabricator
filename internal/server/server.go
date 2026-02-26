@@ -98,6 +98,34 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/auth/me", s.handleAPIAuthMe)
 	s.mux.Handle("GET /api/dashboard", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIDashboard)))
 	s.mux.Handle("GET /api/pr/{owner}/{repo}/{number}", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIPR)))
+
+	// v2 inline comment API (plain JSON, not Javelin format)
+	s.mux.Handle("POST /api/v2/inline", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIInline)))
+
+	// v2 review/merge/close APIs
+	s.mux.Handle("POST /api/v2/review", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIReview)))
+	s.mux.Handle("POST /api/v2/merge", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIMerge)))
+	s.mux.Handle("POST /api/v2/close", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIClose)))
+
+	// Repos API
+	s.mux.Handle("GET /api/repos", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIRepos)))
+	s.mux.Handle("GET /api/repo/{owner}/{repo}/info", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIRepoInfo)))
+	s.mux.Handle("GET /api/repo/{owner}/{repo}/tree", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIRepoTree)))
+	s.mux.Handle("GET /api/repo/{owner}/{repo}/file", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIRepoFile)))
+
+	// Paste API
+	s.mux.Handle("GET /api/paste", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIPasteList)))
+	s.mux.Handle("GET /api/paste/{id}", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIPasteView)))
+	s.mux.Handle("POST /api/paste", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIPasteCreate)))
+
+	// Herald API
+	s.mux.Handle("GET /api/herald", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIHeraldList)))
+	s.mux.Handle("GET /api/herald/{id}", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIHeraldGet)))
+	s.mux.Handle("POST /api/herald", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIHeraldSave)))
+	s.mux.Handle("DELETE /api/herald/{id}", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIHeraldDelete)))
+
+	// Search API
+	s.mux.Handle("GET /api/search", s.auth.RequireAuth(http.HandlerFunc(s.handleAPISearch)))
 }
 
 func (s *Server) handleAPIAuthMe(w http.ResponseWriter, r *http.Request) {
