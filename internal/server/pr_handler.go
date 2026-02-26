@@ -401,17 +401,12 @@ func renderTimelineEvent(b *strings.Builder, ev timelineEvent, isLast bool) {
 	} else {
 		b.WriteString(`<div style="min-width:0;">`)
 	}
-	fmt.Fprintf(b, `<div class="phui-timeline-title" style="font-size:13px;"><strong>%s</strong> %s</div>`,
-		esc(ev.Author.Login), esc(ev.Action))
+	fmt.Fprintf(b, `<div class="phui-timeline-title" style="font-size:13px; display:flex; align-items:baseline; gap:8px;"><span><strong>%s</strong> %s</span><span style="font-size:12px; color:#6b748c; margin-left:auto; white-space:nowrap;">%s</span></div>`,
+		esc(ev.Author.Login), esc(ev.Action), esc(timeAgo(ev.CreatedAt)))
 	if isMajor {
-		fmt.Fprintf(b, `<div class="phui-timeline-extra" style="font-size:12px; color:#6b748c; margin-bottom:8px;">%s</div>`,
-			esc(timeAgo(ev.CreatedAt)))
-		b.WriteString(`<div style="background:#f6f8fa; border:1px solid #e3e4e8; border-radius:4px; padding:12px; font-size:13px; line-height:1.5; overflow-wrap:break-word; word-break:break-word; overflow-x:auto; max-width:100%;">`)
+		b.WriteString(`<div style="background:#f6f8fa; border:1px solid #e3e4e8; border-radius:4px; padding:12px; font-size:13px; line-height:1.5; overflow-wrap:break-word; word-break:break-word; overflow-x:auto; max-width:100%; margin-top:8px;">`)
 		b.WriteString(remarkup.Render(ev.Body))
 		b.WriteString(`</div>`)
-	} else {
-		fmt.Fprintf(b, `<div class="phui-timeline-extra" style="font-size:12px; color:#6b748c;">%s</div>`,
-			esc(timeAgo(ev.CreatedAt)))
 	}
 	b.WriteString(`</div>`)
 
