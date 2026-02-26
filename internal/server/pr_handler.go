@@ -40,7 +40,8 @@ func (s *Server) handlePR(w http.ResponseWriter, r *http.Request) {
 		comments      []ghapi.ReviewComment
 		reviews       []ghapi.Review
 		issueComments []ghapi.IssueComment
-		prErr, diffErr, commentsErr, reviewsErr, issueCommentsErr error
+		checkRuns     []ghapi.CheckRun
+		prErr, diffErr, commentsErr, reviewsErr, issueCommentsErr, checksErr error
 	)
 
 	var wg sync.WaitGroup
@@ -57,6 +58,14 @@ func (s *Server) handlePR(w http.ResponseWriter, r *http.Request) {
 		issueComments, issueCommentsErr = ghapi.FetchIssueComments(ctx, client, owner, repo, number)
 	}()
 	wg.Wait()
+
+	// Fetch check runs after PR (need head SHA).
+	if prErr == nil {
+		checkRuns, checksErr = ghapi.FetchCheckRuns(ctx, client, owner, repo, pr.Head.SHA)
+		if checksErr != nil {
+			checkRuns = nil // non-fatal
+		}
+	}
 
 	if prErr != nil {
 		s.renderError(w, r, "Fetch Error", fmt.Sprintf("Could not load pull request: %v", prErr), http.StatusBadGateway)
@@ -147,11 +156,12 @@ func (s *Server) handlePR(w http.ResponseWriter, r *http.Request) {
 	// Render review form.
 	renderReviewForm(&content, owner, repo, number, sess)
 
-	// Build curtain (sidebar) — moodboard order: Reviewers, Labels, Herald, Properties, Actions.
+	// Build curtain (sidebar) — moodboard order: Reviewers, Labels, Buildables, Herald, Properties, Actions.
 	var curtain strings.Builder
 	renderCurtainReviewersLabels(&curtain, pr, reviews)
+	renderCurtainBuildables(&curtain, checkRuns)
 
-	// Herald (between Labels and Properties, matching moodboard)
+	// Herald (between Buildables and Properties, matching moodboard)
 	if rules, err := s.herald.List(); err == nil && len(rules) > 0 {
 		var changedFiles []string
 		for _, cs := range changesets {
@@ -634,4 +644,62 @@ func labelShadeFromColor(hex string) string {
 		return "grey"
 	}
 	return "blue"
+}
+
+func renderCurtainBuildables(b *strings.Builder, checks []ghapi.CheckRun) {
+	if len(checks) == 0 {
+		return
+	}
+	esc := template.HTMLEscapeString
+
+	b.WriteString(`<div class="mood-curtain-box">`)
+	b.WriteString(`<div class="mood-curtain-title">Buildables</div>`)
+
+	for _, cr := range checks {
+		icon, color := checkRunIconColor(cr)
+		name := cr.Name
+		if cr.AppName != "" && cr.AppName != "GitHub Actions" {
+			name = cr.AppName + " / " + name
+		}
+
+		b.WriteString(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px">`)
+		fmt.Fprintf(b, `<span class="phui-icon-view phui-font-fa %s" style="color:%s;width:16px;text-align:center"></span>`, icon, color)
+		if cr.DetailsURL != "" {
+			fmt.Fprintf(b, `<a href="%s" target="_blank" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none;color:inherit">%s</a>`, esc(cr.DetailsURL), esc(name))
+		} else {
+			fmt.Fprintf(b, `<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">%s</span>`, esc(name))
+		}
+		b.WriteString(`</div>`)
+	}
+
+	b.WriteString(`</div>`)
+}
+
+func checkRunIconColor(cr ghapi.CheckRun) (icon, color string) {
+	if cr.Status != "completed" {
+		switch cr.Status {
+		case "in_progress":
+			return "fa-circle-o-notch", "#c69026"
+		default: // queued
+			return "fa-clock-o", "#6b748c"
+		}
+	}
+	switch cr.Conclusion {
+	case "success":
+		return "fa-check-circle", "#139543"
+	case "failure":
+		return "fa-times-circle", "#c0392b"
+	case "cancelled":
+		return "fa-ban", "#6b748c"
+	case "skipped":
+		return "fa-minus-circle", "#6b748c"
+	case "neutral":
+		return "fa-circle", "#6b748c"
+	case "timed_out":
+		return "fa-clock-o", "#c0392b"
+	case "action_required":
+		return "fa-exclamation-circle", "#c69026"
+	default:
+		return "fa-question-circle", "#6b748c"
+	}
 }
