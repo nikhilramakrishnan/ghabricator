@@ -51,6 +51,9 @@ func FetchRepoTree(ctx context.Context, client *gh.Client, owner, repo, ref, pat
 	if err != nil {
 		return nil, fmt.Errorf("fetch repo tree: %w", err)
 	}
+	if dirContents == nil {
+		return nil, fmt.Errorf("path is a file, not a directory")
+	}
 	entries := make([]RepoEntry, 0, len(dirContents))
 	for _, c := range dirContents {
 		entries = append(entries, RepoEntry{
