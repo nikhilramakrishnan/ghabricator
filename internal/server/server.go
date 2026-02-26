@@ -55,10 +55,13 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /rsrc/", s.handleRsrc)
 	s.mux.HandleFunc("GET /api/theme", s.handleTheme)
 
-	// Auth routes
+	// Auth routes (legacy + API paths)
 	s.mux.HandleFunc("GET /auth/github", s.auth.HandleLogin)
 	s.mux.HandleFunc("GET /auth/callback", s.auth.HandleCallback)
 	s.mux.HandleFunc("GET /auth/logout", s.auth.HandleLogout)
+	s.mux.HandleFunc("GET /api/auth/github", s.auth.HandleLogin)
+	s.mux.HandleFunc("GET /api/auth/callback", s.auth.HandleCallback)
+	s.mux.HandleFunc("GET /api/auth/logout", s.auth.HandleLogout)
 
 	// Protected routes (require auth)
 	s.mux.Handle("GET /dashboard", s.auth.RequireAuth(http.HandlerFunc(s.handleDashboard)))
