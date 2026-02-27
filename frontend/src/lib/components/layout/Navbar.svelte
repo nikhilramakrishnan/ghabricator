@@ -47,7 +47,7 @@
     </a>
   {/if}
   <button class="theme-toggle" title="Toggle theme" onclick={toggleTheme} type="button">
-    <i class="fa {$theme === 'dark' ? 'fa-sun-o' : 'fa-moon-o'}" title="{$theme === 'dark' ? 'Switch to light' : 'Switch to dark'}"></i>
+    <i class="fa fa-adjust"></i>
   </button>
 </nav>
 
