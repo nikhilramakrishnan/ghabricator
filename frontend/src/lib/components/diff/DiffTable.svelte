@@ -49,6 +49,9 @@
     onNewComment?: (path: string, line: number, side: string) => void;
   } = $props();
 
+  let fullWidth = $derived(changeset.isNew || changeset.isDeleted);
+  let colSpan = $derived(fullWidth ? 2 : 6);
+
   // Index comments by line+side for rendering after rows
   let commentsByKey = $derived.by(() => {
     const map = new Map<string, APIReviewComment[]>();
@@ -93,90 +96,129 @@
 
 <div class="diff-wrap">
   <table class="diff-table">
-    <colgroup>
-      <col class="num" style="width:4em" />
-      <col class="left" />
-      <col class="num" style="width:4em" />
-      <col class="copy" />
-      <col class="right" />
-      <col class="cov" />
-    </colgroup>
+    {#if fullWidth}
+      <colgroup>
+        <col class="num" style="width:4em" />
+        <col class="full" />
+      </colgroup>
+    {:else}
+      <colgroup>
+        <col class="num" style="width:4em" />
+        <col class="left" />
+        <col class="num" style="width:4em" />
+        <col class="copy" />
+        <col class="right" />
+        <col class="cov" />
+      </colgroup>
+    {/if}
     <tbody>
       {#each changeset.rows as row, i}
-        <tr>
-          <!-- Old line number -->
-          {#if row.oldNum > 0}
-            <td
-              class="{row.oldClass ? row.oldClass + ' n' : 'n'}"
-              data-n={row.oldNum}
-            >
-              <button class="line-btn" onclick={() => lineClick(row.oldNum, 'LEFT')}>
-                {row.oldNum}
-              </button>
-            </td>
-          {:else}
-            <td class="n"></td>
-          {/if}
+        {#if fullWidth}
+          {@const lineNum = changeset.isNew ? row.newNum : row.oldNum}
+          {@const cls = changeset.isNew ? 'new new-full' : 'old old-full'}
+          <tr>
+            {#if lineNum > 0}
+              <td class="{cls} n" data-n={lineNum}>
+                <button class="line-btn" onclick={() => lineClick(lineNum, changeset.isNew ? 'RIGHT' : 'LEFT')}>
+                  {lineNum}
+                </button>
+              </td>
+            {:else}
+              <td class="n"></td>
+            {/if}
+            <td class={cls}>{@html changeset.isNew ? row.newContent : row.oldContent}</td>
+          </tr>
+        {:else}
+          <tr>
+            {#if row.oldNum > 0}
+              <td
+                class="{row.oldClass ? row.oldClass + ' n' : 'n'}"
+                data-n={row.oldNum}
+              >
+                <button class="line-btn" onclick={() => lineClick(row.oldNum, 'LEFT')}>
+                  {row.oldNum}
+                </button>
+              </td>
+            {:else}
+              <td class="n"></td>
+            {/if}
 
-          <!-- Old content -->
-          {#if row.oldClass}
-            <td class={row.oldClass} data-copy-mode="copy-l">{@html row.oldContent}</td>
-          {:else}
-            <td data-copy-mode="copy-l">{@html row.oldContent}</td>
-          {/if}
+            {#if row.oldClass}
+              <td class={row.oldClass} data-copy-mode="copy-l">{@html row.oldContent}</td>
+            {:else}
+              <td data-copy-mode="copy-l">{@html row.oldContent}</td>
+            {/if}
 
-          <!-- New line number -->
-          {#if row.newNum > 0}
-            <td
-              class="{row.newClass ? row.newClass + ' n' : 'n'}"
-              data-n={row.newNum}
-            >
-              <button class="line-btn" onclick={() => lineClick(row.newNum, 'RIGHT')}>
-                {row.newNum}
-              </button>
-            </td>
-          {:else}
-            <td class="n"></td>
-          {/if}
+            {#if row.newNum > 0}
+              <td
+                class="{row.newClass ? row.newClass + ' n' : 'n'}"
+                data-n={row.newNum}
+              >
+                <button class="line-btn" onclick={() => lineClick(row.newNum, 'RIGHT')}>
+                  {row.newNum}
+                </button>
+              </td>
+            {:else}
+              <td class="n"></td>
+            {/if}
 
-          <!-- Copy column -->
-          <td class="copy"></td>
+            <td class="copy"></td>
 
-          <!-- New content -->
-          {#if row.newClass}
-            <td class={row.newClass} colspan="2" data-copy-mode="copy-r"
-              >{@html row.newContent}</td
-            >
-          {:else}
-            <td colspan="2" data-copy-mode="copy-r">{@html row.newContent}</td>
-          {/if}
-        </tr>
+            {#if row.newClass}
+              <td class={row.newClass} colspan="2" data-copy-mode="copy-r"
+                >{@html row.newContent}</td
+              >
+            {:else}
+              <td colspan="2" data-copy-mode="copy-r">{@html row.newContent}</td>
+            {/if}
+          </tr>
+        {/if}
 
-        <!-- Inline comments for this row -->
         {#each getCommentsForRow(row) as group}
           {#each group.comments as comment}
             <tr class="inline">
-              <td colspan="6">
-                <InlineComment {comment} />
-              </td>
+              {#if fullWidth}
+                <td colspan="2"><InlineComment {comment} /></td>
+              {:else if group.side === 'RIGHT'}
+                <td colspan="2"></td>
+                <td colspan="4"><InlineComment {comment} /></td>
+              {:else}
+                <td colspan="2"><InlineComment {comment} /></td>
+                <td colspan="4"></td>
+              {/if}
             </tr>
           {/each}
         {/each}
 
-        <!-- Draft editors for this row -->
         {#each $drafts.filter((d) => d.path === changeset.displayPath && ((row.newNum > 0 && d.line === row.newNum && d.side === 'RIGHT') || (row.oldNum > 0 && d.line === row.oldNum && d.side === 'LEFT'))) as draft}
           <tr class="inline">
-            <td colspan="6">
-              <InlineEditor
-                path={draft.path}
-                line={draft.line}
-                side={draft.side}
-                onSave={(body) => {
-                  updateDraft(draft.path, draft.line, draft.side, body);
-                }}
-                onCancel={() => removeDraft(draft.path, draft.line, draft.side)}
-              />
-            </td>
+            {#if fullWidth}
+              <td colspan="2">
+                <InlineEditor
+                  path={draft.path} line={draft.line} side={draft.side}
+                  onSave={(body) => updateDraft(draft.path, draft.line, draft.side, body)}
+                  onCancel={() => removeDraft(draft.path, draft.line, draft.side)}
+                />
+              </td>
+            {:else if draft.side === 'RIGHT'}
+              <td colspan="2"></td>
+              <td colspan="4">
+                <InlineEditor
+                  path={draft.path} line={draft.line} side={draft.side}
+                  onSave={(body) => updateDraft(draft.path, draft.line, draft.side, body)}
+                  onCancel={() => removeDraft(draft.path, draft.line, draft.side)}
+                />
+              </td>
+            {:else}
+              <td colspan="2">
+                <InlineEditor
+                  path={draft.path} line={draft.line} side={draft.side}
+                  onSave={(body) => updateDraft(draft.path, draft.line, draft.side, body)}
+                  onCancel={() => removeDraft(draft.path, draft.line, draft.side)}
+                />
+              </td>
+              <td colspan="4"></td>
+            {/if}
           </tr>
         {/each}
       {/each}
@@ -193,17 +235,14 @@
     width: 100%;
     border-collapse: collapse;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.5;
-    table-layout: fixed;
   }
 
   td {
     padding: 1px 8px;
     white-space: pre;
     border: none;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   td.n {

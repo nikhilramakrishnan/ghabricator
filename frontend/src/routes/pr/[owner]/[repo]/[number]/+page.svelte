@@ -192,14 +192,13 @@
   );
 
   // Merge/close actions
-  let mergeMethod = $state('squash');
   let actionLoading = $state(false);
 
   async function handleMerge() {
     if (actionLoading) return;
     actionLoading = true;
     try {
-      await apiPost('/api/v2/merge', { owner, repo, number, mergeMethod });
+      await apiPost('/api/v2/merge', { owner, repo, number, mergeMethod: 'squash' });
       window.location.reload();
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : S.pr.mergeFailed);
@@ -337,36 +336,6 @@
     {/if}
   </Box>
 
-  {#if !pr.merged}
-    <div class="action-row">
-      {#if pr.state !== 'closed'}
-        <select bind:value={mergeMethod} class="merge-select">
-          <option value="squash">{S.pr.mergeSquash}</option>
-          <option value="merge">{S.pr.mergeMerge}</option>
-          <option value="rebase">{S.pr.mergeRebase}</option>
-        </select>
-        <Button color="green" icon="fa-check-circle" disabled={actionLoading} onclick={handleMerge}>
-          {S.pr.landRevision}
-        </Button>
-        <Button color="default" icon="fa-times-circle" disabled={actionLoading} onclick={() => handleClose('closed')}>
-          {S.pr.close}
-        </Button>
-      {:else}
-        <Button color="green" icon="fa-refresh" disabled={actionLoading} onclick={() => handleClose('open')}>
-          {S.pr.reopen}
-        </Button>
-      {/if}
-    </div>
-  {/if}
-
-  {#if commits.length > 0}
-    <CommitHistory
-      {commits}
-      baseBranch={pr.base.ref}
-      onRangeChange={handleRangeChange}
-    />
-  {/if}
-
   {#if compareBase || compareHead}
     <div class="interdiff-indicator">
       <i class="fa fa-exchange"></i>
@@ -395,11 +364,36 @@
     </div>
   {/each}
 
+  {#if commits.length > 0}
+    <CommitHistory
+      {commits}
+      baseBranch={pr.base.ref}
+      onRangeChange={handleRangeChange}
+    />
+  {/if}
+
   {#if timelineEvents.length > 0}
     <Timeline events={timelineEvents} />
   {/if}
 
   <ReviewForm {owner} {repo} {number} />
+
+  {#if !pr.merged}
+    <div class="action-row">
+      {#if pr.state !== 'closed'}
+        <Button color="green" icon="fa-check-circle" disabled={actionLoading} onclick={handleMerge}>
+          {S.pr.landRevision}
+        </Button>
+        <Button color="default" icon="fa-times-circle" disabled={actionLoading} onclick={() => handleClose('closed')}>
+          {S.pr.close}
+        </Button>
+      {:else}
+        <Button color="green" icon="fa-refresh" disabled={actionLoading} onclick={() => handleClose('open')}>
+          {S.pr.reopen}
+        </Button>
+      {/if}
+    </div>
+  {/if}
 </FormationView>
 
 <style>
@@ -530,15 +524,6 @@
     align-items: center;
     gap: 8px;
     padding: 10px 0;
-  }
-
-  .merge-select {
-    font-size: 13px;
-    padding: 6px 8px;
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    background: var(--bg-card);
-    color: var(--text);
   }
 
   .interdiff-indicator {
