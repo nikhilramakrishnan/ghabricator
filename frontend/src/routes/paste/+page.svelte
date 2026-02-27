@@ -4,22 +4,23 @@
     ObjectItemList, ObjectItem, Attribute, Button, InfoView
   } from '$lib/components/phui';
   import type { APIPasteSummary } from '$lib/types';
+  import { S } from '$lib/strings';
 
   let { data } = $props();
   let pastes: APIPasteSummary[] = $derived(data.pastes ?? []);
 
   const crumbs = [
-    { name: 'Home', href: '/' },
-    { name: 'Paste' }
+    { name: S.crumb.home, href: '/' },
+    { name: S.paste.title }
   ];
 </script>
 
-<PageShell title="Recent Pastes" icon="fa-clipboard">
+<PageShell title={S.paste.recentPastes} icon="fa-clipboard">
   {#snippet breadcrumbs()}
     <Breadcrumbs {crumbs} />
   {/snippet}
   {#snippet headerRight()}
-    <Button color="green" icon="fa-plus" href="/paste/new">Create Paste</Button>
+    <Button color="green" icon="fa-plus" href="/paste/new">{S.paste.createPaste}</Button>
   {/snippet}
 
   {#if pastes.length === 0}

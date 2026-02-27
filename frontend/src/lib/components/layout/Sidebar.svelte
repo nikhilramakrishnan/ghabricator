@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { S } from '$lib/strings';
+
   let { navActive = '' }: { navActive?: string } = $props();
 </script>
 
@@ -6,27 +8,27 @@
   <div class="sidebar-section">
     <a href="/dashboard" class="sidebar-link" class:active={navActive === 'revisions'}>
       <i class="fa fa-code-fork"></i>
-      <span>Revisions</span>
+      <span>{S.nav.revisions}</span>
     </a>
     <a href="/repos" class="sidebar-link" class:active={navActive === 'repos'}>
       <i class="fa fa-database"></i>
-      <span>Repositories</span>
+      <span>{S.nav.repositories}</span>
     </a>
     <a href="/search" class="sidebar-link" class:active={navActive === 'search'}>
       <i class="fa fa-search"></i>
-      <span>Search</span>
+      <span>{S.nav.search}</span>
     </a>
   </div>
 
   <div class="sidebar-section">
-    <div class="section-label">Tools</div>
+    <div class="section-label">{S.nav.tools}</div>
     <a href="/paste" class="sidebar-link" class:active={navActive === 'paste'}>
       <i class="fa fa-clipboard"></i>
-      <span>Paste</span>
+      <span>{S.nav.paste}</span>
     </a>
     <a href="/actions" class="sidebar-link" class:active={navActive === 'actions'}>
       <i class="fa fa-bullhorn"></i>
-      <span>Actions</span>
+      <span>{S.nav.actions}</span>
     </a>
   </div>
 </aside>

@@ -4,11 +4,12 @@
   import { apiPost } from '$lib/api';
   import { goto } from '$app/navigation';
   import type { HeraldCondition, HeraldAction } from '$lib/types';
+  import { S } from '$lib/strings';
 
   const crumbs = [
-    { name: 'Home', href: '/' },
-    { name: 'Actions', href: '/actions' },
-    { name: 'New Rule' }
+    { name: S.crumb.home, href: '/' },
+    { name: S.actions.title, href: '/actions' },
+    { name: S.actions.newRule }
   ];
 
   const conditionTypes = [
@@ -66,7 +67,7 @@
   }
 </script>
 
-<PageShell title="New Herald Rule" icon="fa-plus">
+<PageShell title={S.actions.newRule} icon="fa-plus">
   {#snippet breadcrumbs()}
     <Breadcrumbs {crumbs} />
   {/snippet}
@@ -97,7 +98,7 @@
               </select>
               <input type="text" bind:value={cond.value} placeholder="Value" class="form-input row-input" />
               {#if conditions.length > 1}
-                <button type="button" class="btn-icon" title="Remove" onclick={() => removeCondition(i)}>
+                <button type="button" class="btn-icon" title={S.common.remove} onclick={() => removeCondition(i)}>
                   <i class="fa fa-times"></i>
                 </button>
               {/if}
@@ -119,7 +120,7 @@
               </select>
               <input type="text" bind:value={act.value} placeholder="Value" class="form-input row-input" />
               {#if actions.length > 1}
-                <button type="button" class="btn-icon" title="Remove" onclick={() => removeAction(i)}>
+                <button type="button" class="btn-icon" title={S.common.remove} onclick={() => removeAction(i)}>
                   <i class="fa fa-times"></i>
                 </button>
               {/if}

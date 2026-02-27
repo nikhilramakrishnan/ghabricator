@@ -5,21 +5,22 @@
   } from '$lib/components/phui';
   import type { Tab } from '$lib/components/phui';
   import type { HeraldRule, APIWorkflowRun } from '$lib/types';
+  import { S } from '$lib/strings';
 
   let { data } = $props();
   let rules: HeraldRule[] = $derived(data.rules ?? []);
   let runs: APIWorkflowRun[] = $derived(data.runs ?? []);
 
   const crumbs = [
-    { name: 'Home', href: '/' },
-    { name: 'Actions' }
+    { name: S.crumb.home, href: '/' },
+    { name: S.actions.title }
   ];
 
   let activeTab = $state('builds');
 
   let tabs: Tab[] = $derived([
-    { key: 'builds', label: 'Builds', icon: 'fa-cog', count: runs.length },
-    { key: 'rules', label: 'Rules', icon: 'fa-bullhorn', count: rules.length },
+    { key: 'builds', label: S.actions.builds, icon: 'fa-cog', count: runs.length },
+    { key: 'rules', label: S.actions.rules, icon: 'fa-bullhorn', count: rules.length },
   ]);
 
   function ruleColor(rule: HeraldRule): string {
@@ -55,19 +56,19 @@
   }
 </script>
 
-<PageShell title="Actions" icon="fa-cog">
+<PageShell title={S.actions.title} icon="fa-cog">
   {#snippet breadcrumbs()}
     <Breadcrumbs {crumbs} />
   {/snippet}
   {#snippet headerRight()}
-    <Button color="green" icon="fa-plus" href="/actions/new">New Rule</Button>
+    <Button color="green" icon="fa-plus" href="/actions/new">{S.actions.newRule}</Button>
   {/snippet}
 
   <TabView {tabs} bind:active={activeTab} />
 
   {#if activeTab === 'rules'}
     {#if rules.length === 0}
-      <InfoView icon="fa-inbox">No Herald rules configured.</InfoView>
+      <InfoView icon="fa-inbox">{S.actions.noRules}</InfoView>
     {:else}
       <ObjectItemList>
         {#each rules as rule}
@@ -79,9 +80,9 @@
           >
             {#snippet tags()}
               {#if rule.disabled}
-                <Tag shade="grey">Disabled</Tag>
+                <Tag shade="grey">{S.common.disabled}</Tag>
               {:else}
-                <Tag shade="green">Active</Tag>
+                <Tag shade="green">{S.common.active}</Tag>
               {/if}
               <Tag shade={rule.must_match_all ? 'blue' : 'yellow'}>
                 {rule.must_match_all ? 'Match All' : 'Match Any'}
@@ -99,7 +100,7 @@
     {/if}
   {:else if activeTab === 'builds'}
     {#if runs.length === 0}
-      <InfoView icon="fa-inbox">No workflow runs found.</InfoView>
+      <InfoView icon="fa-inbox">{S.actions.noRuns}</InfoView>
     {:else}
       <ObjectItemList>
         {#each runs as run}

@@ -8,6 +8,7 @@
   import type { APIReviewComment as DiffComment } from '$lib/components/diff';
   import { ReviewForm } from '$lib/components/review';
   import { apiPost } from '$lib/api';
+  import { S } from '$lib/strings';
   import { addDraft } from '$lib/stores/inline';
   import type {
     APIPRDetailResponse, APIChangeset, APIReviewComment,
@@ -194,8 +195,8 @@
   }
 
   let crumbs = $derived([
-    { name: 'Home', href: '/' },
-    { name: 'Dashboard', href: '/dashboard' },
+    { name: S.crumb.home, href: '/' },
+    { name: S.revisions.title, href: '/dashboard' },
     { name: `${owner}/${repo}`, href: `/repos/${owner}/${repo}` },
     { name: `D${number}` }
   ]);
@@ -240,7 +241,7 @@
   <!-- Main content -->
   {#if pr.body?.trim()}
     <Box border>
-      <HeaderView title="Summary" icon="fa-file-text-o" />
+      <HeaderView title={S.pr.summary} icon="fa-file-text-o" />
       <div class="summary-body">
         <div class="remarkup-content">
           {@html pr.body}
@@ -271,20 +272,20 @@
 
   {#snippet curtain()}
     <!-- Summary -->
-    <CurtainBox title="Summary">
+    <CurtainBox title={S.pr.summary}>
       <PropertyList items={[
-        { label: 'Author', value: pr.author.login },
-        { label: 'Status', value: status.text },
-        { label: 'Created', value: pr.createdAt },
-        { label: 'Updated', value: pr.updatedAt },
-        { label: 'Base', value: pr.base.ref },
-        { label: 'Head', value: pr.head.ref },
-        { label: 'Changes', value: `+${pr.additions} / -${pr.deletions} in ${pr.changedFiles} files` }
+        { label: S.pr.author, value: pr.author.login },
+        { label: S.pr.status, value: status.text },
+        { label: S.pr.created, value: pr.createdAt },
+        { label: S.pr.updated, value: pr.updatedAt },
+        { label: S.pr.base, value: pr.base.ref },
+        { label: S.pr.head, value: pr.head.ref },
+        { label: S.pr.changes, value: `+${pr.additions} / -${pr.deletions} in ${pr.changedFiles} files` }
       ]} />
     </CurtainBox>
 
     <!-- Reviewers -->
-    <CurtainBox title="Reviewers">
+    <CurtainBox title={S.pr.reviewers}>
       {#if pr.reviewers?.length}
         {#each pr.reviewers as reviewer}
           {@const rs = reviewStateForUser(reviewer.login)}
@@ -304,7 +305,7 @@
 
     <!-- Buildables -->
     {#if checkRuns.length > 0}
-      <CurtainBox title="Buildables">
+      <CurtainBox title={S.pr.buildables}>
         <StatusList items={checkRuns.map((cr) => {
           const d = checkRunDisplay(cr);
           return { name: d.name, icon: d.icon, color: d.color, href: cr.detailsURL || undefined };
@@ -313,7 +314,7 @@
     {/if}
 
     <!-- Herald -->
-    <CurtainBox title="Herald">
+    <CurtainBox title={S.pr.herald}>
       {#if heraldMatches.length > 0}
         {#each heraldMatches as match}
           <div class="herald-match">
@@ -341,7 +342,7 @@
 
     <!-- Labels -->
     {#if pr.labels?.length}
-      <CurtainBox title="Labels">
+      <CurtainBox title={S.pr.labels}>
         {#each pr.labels as label}
           <Tag shade={labelShade(label.color)}>{label.name}</Tag>
           {' '}

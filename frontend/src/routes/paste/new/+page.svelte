@@ -4,11 +4,12 @@
   import { apiPost } from '$lib/api';
   import { goto } from '$app/navigation';
   import type { APIPasteCreateResponse } from '$lib/types';
+  import { S } from '$lib/strings';
 
   const crumbs = [
-    { name: 'Home', href: '/' },
-    { name: 'Paste', href: '/paste' },
-    { name: 'Create' }
+    { name: S.crumb.home, href: '/' },
+    { name: S.paste.title, href: '/paste' },
+    { name: S.paste.createPaste }
   ];
 
   const languages = [
@@ -60,7 +61,7 @@
   }
 </script>
 
-<PageShell title="Create Paste" icon="fa-plus">
+<PageShell title={S.paste.createPaste} icon="fa-plus">
   {#snippet breadcrumbs()}
     <Breadcrumbs {crumbs} />
   {/snippet}

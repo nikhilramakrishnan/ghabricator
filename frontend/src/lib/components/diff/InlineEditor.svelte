@@ -15,7 +15,7 @@
     onCancel: () => void;
   } = $props();
 
-  // We intentionally capture initialBody once — the editor owns its own draft state.
+  // svelte-ignore state_referenced_locally — intentionally capture once; editor owns its draft.
   let body = $state(initialBody);
 </script>
 

@@ -2,6 +2,7 @@
   import { Breadcrumbs, CurtainLayout } from '$lib/components/layout';
   import { CurtainBox, PropertyList, Tag, ActionList, InfoView } from '$lib/components/phui';
   import type { APIRepoEntry, APIRepoInfo } from '$lib/types';
+  import { S } from '$lib/strings';
 
   let { data } = $props();
   let owner = $derived(data.owner);
@@ -13,8 +14,8 @@
   // Build breadcrumbs from path segments
   let crumbs = $derived.by(() => {
     const items: { name: string; href?: string }[] = [
-      { name: 'Home', href: '/' },
-      { name: 'Repositories', href: '/repos' },
+      { name: S.crumb.home, href: '/' },
+      { name: S.repos.title, href: '/repos' },
       { name: `${owner}/${repo}`, href: `/repos/${owner}/${repo}` }
     ];
     if (path) {
@@ -59,9 +60,9 @@
   // Curtain for sidebar
   function buildCurtainProps(info: APIRepoInfo) {
     return [
-      { label: 'Visibility', value: info.private ? 'Private' : 'Public' },
-      { label: 'Stars', value: String(info.stars) },
-      { label: 'Forks', value: String(info.forks) }
+      { label: S.repos.visibility, value: info.private ? 'Private' : 'Public' },
+      { label: S.repos.stars, value: String(info.stars) },
+      { label: S.repos.forks, value: String(info.forks) }
     ];
   }
 </script>
@@ -119,12 +120,12 @@
     </table>
 
     {#snippet curtain()}
-      <CurtainBox title="Actions">
+      <CurtainBox title={S.common.actions}>
         <ActionList actions={[
-          { label: 'View on GitHub', href: info.htmlURL, icon: 'fa-github' }
+          { label: S.repos.viewOnGitHub, href: info.htmlURL, icon: 'fa-github' }
         ]} />
       </CurtainBox>
-      <CurtainBox title="Details">
+      <CurtainBox title={S.common.details}>
         <PropertyList items={[
           ...buildCurtainProps(info),
           ...(info.description ? [{ label: 'About', value: info.description }] : [])
@@ -174,12 +175,12 @@
     </div>
 
     {#snippet curtain()}
-      <CurtainBox title="Actions">
+      <CurtainBox title={S.common.actions}>
         <ActionList actions={[
-          { label: 'View on GitHub', href: info.htmlURL, icon: 'fa-github' }
+          { label: S.repos.viewOnGitHub, href: info.htmlURL, icon: 'fa-github' }
         ]} />
       </CurtainBox>
-      <CurtainBox title="Details">
+      <CurtainBox title={S.common.details}>
         <PropertyList items={buildCurtainProps(info)} />
       </CurtainBox>
     {/snippet}

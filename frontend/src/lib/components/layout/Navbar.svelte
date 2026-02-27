@@ -2,6 +2,7 @@
   import { user } from '$lib/stores/auth';
   import { theme, toggleTheme } from '$lib/stores/theme';
   import { goto } from '$app/navigation';
+  import { S } from '$lib/strings';
 
   let { navActive = '' }: { navActive?: string } = $props();
 
@@ -18,7 +19,7 @@
 <nav class="topbar">
   <a class="brand" href="/">
     <i class="fa fa-cog"></i>
-    <span>Ghabricator</span>
+    <span>{S.appName}</span>
   </a>
 
   <form class="search-form" onsubmit={handleSearch}>

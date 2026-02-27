@@ -7,16 +7,17 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import type { APISearchResponse } from '$lib/types';
+  import { S } from '$lib/strings';
 
   const crumbs = [
-    { name: 'Home', href: '/' },
-    { name: 'Search' }
+    { name: S.crumb.home, href: '/' },
+    { name: S.search.title }
   ];
 
   const searchTypes = [
-    { value: 'prs', label: 'Pull Requests', icon: 'fa-code-fork' },
-    { value: 'code', label: 'Code', icon: 'fa-code' },
-    { value: 'repos', label: 'Repositories', icon: 'fa-database' },
+    { value: 'prs', label: S.search.prs, icon: 'fa-code-fork' },
+    { value: 'code', label: S.search.code, icon: 'fa-code' },
+    { value: 'repos', label: S.search.repos, icon: 'fa-database' },
   ];
 
   let query = $state($page.url.searchParams.get('q') ?? '');
@@ -26,7 +27,7 @@
   let searched = $state(!!$page.url.searchParams.get('q'));
 
   // Run search on initial load if query params present
-  if (query) {
+  if ($page.url.searchParams.get('q')) {
     doSearch();
   }
 
@@ -67,7 +68,7 @@
   };
 </script>
 
-<PageShell title="Search" icon="fa-search">
+<PageShell title={S.search.title} icon="fa-search">
   {#snippet breadcrumbs()}
     <Breadcrumbs {crumbs} />
   {/snippet}

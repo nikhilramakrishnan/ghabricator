@@ -1,10 +1,12 @@
 <script lang="ts">
   let {
     title,
-    icon = ''
+    icon = '',
+    count
   }: {
     title: string;
     icon?: string;
+    count?: number;
   } = $props();
 </script>
 
@@ -14,6 +16,9 @@
       <i class="fa {icon} header-icon"></i>
     {/if}
     {title}
+    {#if count != null}
+      <span class="header-count">{count}</span>
+    {/if}
   </h1>
 </div>
 
@@ -35,5 +40,14 @@
   .header-icon {
     color: var(--text-muted);
     font-size: 14px;
+  }
+  .header-count {
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-left: 2px;
   }
 </style>

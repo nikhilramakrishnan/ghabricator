@@ -18,7 +18,7 @@
   });
 
   function getNavActive(path: string): string {
-    if (path.startsWith('/pr/') || path === '/dashboard') return 'revisions';
+    if (path.startsWith('/pr/') || path.startsWith('/dashboard')) return 'revisions';
     if (path.startsWith('/repo')) return 'repos';
     if (path.startsWith('/paste')) return 'paste';
     if (path.startsWith('/actions')) return 'actions';

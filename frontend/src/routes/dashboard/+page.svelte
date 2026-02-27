@@ -5,26 +5,27 @@
     Tag, InfoView
   } from '$lib/components/phui';
   import type { APIPRSummary } from '$lib/types';
+  import { S } from '$lib/strings';
 
   let { data } = $props();
   let authored: APIPRSummary[] = $derived(data.data.authored ?? []);
   let reviewRequested: APIPRSummary[] = $derived(data.data.reviewRequested ?? []);
 
   const crumbs = [
-    { name: 'Home', href: '/' },
-    { name: 'Dashboard' }
+    { name: S.crumb.home, href: '/' },
+    { name: S.revisions.title }
   ];
 </script>
 
-<PageShell title="Active Revisions" icon="fa-code-fork">
+<PageShell title={S.revisions.title} icon="fa-code-fork">
   {#snippet breadcrumbs()}
     <Breadcrumbs {crumbs} />
   {/snippet}
 
     <Box border>
-      <HeaderView title="Authored" icon="fa-pencil" />
+      <HeaderView title={S.revisions.authored} icon="fa-pencil" />
       {#if authored.length === 0}
-        <InfoView icon="fa-inbox">No open pull requests.</InfoView>
+        <InfoView icon="fa-inbox">{S.revisions.noPRs}</InfoView>
       {:else}
         <ObjectItemList>
           {#each authored as pr}
@@ -70,9 +71,9 @@
     </Box>
 
     <Box border>
-      <HeaderView title="Review Requested" icon="fa-eye" />
+      <HeaderView title={S.revisions.needsReview} icon="fa-eye" />
       {#if reviewRequested.length === 0}
-        <InfoView icon="fa-inbox">No open pull requests.</InfoView>
+        <InfoView icon="fa-inbox">{S.revisions.noPRs}</InfoView>
       {:else}
         <ObjectItemList>
           {#each reviewRequested as pr}

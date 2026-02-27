@@ -2,13 +2,14 @@
   import { Breadcrumbs, CurtainLayout } from '$lib/components/layout';
   import { Box, HeaderView, Tag, CurtainBox, PropertyList, ActionList } from '$lib/components/phui';
   import type { HeraldRule } from '$lib/types';
+  import { S } from '$lib/strings';
 
   let { data } = $props();
   let rule: HeraldRule = $derived(data.rule);
 
   let crumbs = $derived([
-    { name: 'Home', href: '/' },
-    { name: 'Actions', href: '/actions' },
+    { name: S.crumb.home, href: '/' },
+    { name: S.actions.title, href: '/actions' },
     { name: rule.name }
   ]);
 
@@ -36,16 +37,16 @@
     </h1>
     <div>
       {#if rule.disabled}
-        <Tag shade="grey">Disabled</Tag>
+        <Tag shade="grey">{S.common.disabled}</Tag>
       {:else}
-        <Tag shade="green">Active</Tag>
+        <Tag shade="green">{S.common.active}</Tag>
       {/if}
     </div>
   </div>
 
   <CurtainLayout>
     <Box border>
-      <HeaderView title="Conditions" icon="fa-filter" />
+      <HeaderView title={S.actions.conditions} icon="fa-filter" />
       <div class="section-body">
         <p class="section-desc">
           {rule.must_match_all ? 'When all of these conditions are met:' : 'When any of these conditions are met:'}
@@ -67,7 +68,7 @@
     </Box>
 
     <Box border>
-      <HeaderView title="Actions" icon="fa-bolt" />
+      <HeaderView title={S.common.actions} icon="fa-bolt" />
       <div class="section-body">
         {#if rule.actions.length === 0}
           <p class="empty-text">No actions configured.</p>
@@ -86,19 +87,19 @@
     </Box>
 
     {#snippet curtain()}
-      <CurtainBox title="Details">
+      <CurtainBox title={S.common.details}>
         <PropertyList items={[
-          { label: 'Author', value: rule.author_login },
+          { label: S.common.author, value: rule.author_login },
           { label: 'Match', value: rule.must_match_all ? 'All Conditions' : 'Any Condition' },
-          { label: 'Status', value: rule.disabled ? 'Disabled' : 'Active' },
-          { label: 'Created', value: rule.created_at },
-          ...(rule.updated_at !== rule.created_at ? [{ label: 'Updated', value: rule.updated_at }] : [])
+          { label: 'Status', value: rule.disabled ? S.common.disabled : S.common.active },
+          { label: S.common.created, value: rule.created_at },
+          ...(rule.updated_at !== rule.created_at ? [{ label: S.common.updated, value: rule.updated_at }] : [])
         ]} />
       </CurtainBox>
 
-      <CurtainBox title="Actions">
+      <CurtainBox title={S.common.actions}>
         <ActionList actions={[
-          { label: 'Edit Rule', href: `/actions/new?edit=${rule.id}`, icon: 'fa-pencil' }
+          { label: S.common.editRule, href: `/actions/new?edit=${rule.id}`, icon: 'fa-pencil' }
         ]} />
       </CurtainBox>
     {/snippet}

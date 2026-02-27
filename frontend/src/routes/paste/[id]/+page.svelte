@@ -2,13 +2,14 @@
   import { Breadcrumbs, CurtainLayout } from '$lib/components/layout';
   import { Box, HeaderView, Tag, CurtainBox, PropertyList, ActionList } from '$lib/components/phui';
   import type { APIPasteDetail } from '$lib/types';
+  import { S } from '$lib/strings';
 
   let { data } = $props();
   let paste: APIPasteDetail = $derived(data.paste);
 
   let crumbs = $derived([
-    { name: 'Home', href: '/' },
-    { name: 'Paste', href: '/paste' },
+    { name: S.crumb.home, href: '/' },
+    { name: S.paste.title, href: '/paste' },
     { name: `P${paste.id.slice(0, 8)}` }
   ]);
 </script>
@@ -49,7 +50,7 @@
 
     {#snippet curtain()}
       {#if paste.owner?.login}
-        <CurtainBox title="Author">
+        <CurtainBox title={S.common.author}>
           <div class="author-info">
             {#if paste.owner.avatarURL}
               <img src={paste.owner.avatarURL} alt="" class="author-avatar" />
@@ -59,17 +60,17 @@
         </CurtainBox>
       {/if}
 
-      <CurtainBox title="Details">
+      <CurtainBox title={S.common.details}>
         <PropertyList items={[
-          { label: 'Visibility', value: paste.public ? 'Public' : 'Secret' },
-          { label: 'Created', value: paste.createdAt },
-          ...(paste.updatedAt !== paste.createdAt ? [{ label: 'Updated', value: paste.updatedAt }] : [])
+          { label: S.paste.visibility, value: paste.public ? S.common.public : S.common.secret },
+          { label: S.common.created, value: paste.createdAt },
+          ...(paste.updatedAt !== paste.createdAt ? [{ label: S.common.updated, value: paste.updatedAt }] : [])
         ]} />
       </CurtainBox>
 
-      <CurtainBox title="Actions">
+      <CurtainBox title={S.common.actions}>
         <ActionList actions={[
-          { label: 'View on GitHub', href: paste.htmlURL, icon: 'fa-github' }
+          { label: S.repos.viewOnGitHub, href: paste.htmlURL, icon: 'fa-github' }
         ]} />
       </CurtainBox>
     {/snippet}

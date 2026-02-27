@@ -4,13 +4,14 @@
     ObjectItemList, ObjectItem, Attribute, Tag
   } from '$lib/components/phui';
   import type { APIRepoSummary } from '$lib/types';
+  import { S } from '$lib/strings';
 
   let { data } = $props();
   let repos: APIRepoSummary[] = $derived(data.repos ?? []);
 
   const crumbs = [
-    { name: 'Home', href: '/' },
-    { name: 'Repositories' }
+    { name: S.crumb.home, href: '/' },
+    { name: S.repos.title }
   ];
 
   // Language dot colors
@@ -37,7 +38,7 @@
   }
 </script>
 
-<PageShell title="Your Repositories" icon="fa-database">
+<PageShell title={S.repos.title} icon="fa-database">
   {#snippet breadcrumbs()}
     <Breadcrumbs {crumbs} />
   {/snippet}
