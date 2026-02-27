@@ -219,12 +219,13 @@
   }
 
   .dash-col {
-    flex: 1;
+    flex: 3;
     min-width: 0;
   }
 
   .dash-col-narrow {
-    flex: 0 0 380px;
+    flex: 2;
+    min-width: 0;
   }
 
   .view-all {
