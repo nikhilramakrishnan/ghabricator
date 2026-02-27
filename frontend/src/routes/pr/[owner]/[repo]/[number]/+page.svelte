@@ -34,6 +34,7 @@
   let interdiffChangesets = $state<APIChangeset[] | null>(null);
   let interdiffLoading = $state(false);
   let changesetCollapsed = $state(false);
+  let commentsCollapsed = $state(false);
 
   let displayChangesets = $derived(interdiffChangesets ?? changesets);
 
@@ -118,7 +119,7 @@
   }
 
   // Check run icon/color mapping
-  function checkRunDisplay(cr: APICheckRun): { icon: string; color: string; name: string; duration: string; elapsed: string } {
+  function checkRunDisplay(cr: APICheckRun): { icon: string; color: string; name: string; duration: string } {
     let icon: string;
     let color: string;
     if (cr.status !== 'completed') {
@@ -153,10 +154,7 @@
         duration = `${secs}s`;
       }
     }
-    // Elapsed
-    const ref = cr.completedAt || cr.startedAt;
-    const elapsed = ref ? formatTimestamp(ref) : '';
-    return { icon, color, name, duration, elapsed };
+    return { icon, color, name, duration };
   }
 
   // Is the PR approved? Check if any reviewer's latest review is APPROVED
@@ -332,17 +330,13 @@
             <a href={cr.detailsURL} target="_blank" rel="noopener" class="buildable-item">
               <i class="fa {d.icon}" style="color:{d.color}"></i>
               <span class="buildable-name">{d.name}</span>
-
-              {#if d.duration}<span class="buildable-duration">{d.duration}</span>{/if}
-              {#if d.elapsed}<span class="buildable-elapsed">{d.elapsed}</span>{/if}
+              {#if d.duration}<span class="buildable-duration"><i class="fa fa-clock-o"></i> {d.duration}</span>{/if}
             </a>
           {:else}
             <div class="buildable-item">
               <i class="fa {d.icon}" style="color:{d.color}"></i>
               <span class="buildable-name">{d.name}</span>
-
-              {#if d.duration}<span class="buildable-duration">{d.duration}</span>{/if}
-              {#if d.elapsed}<span class="buildable-elapsed">{d.elapsed}</span>{/if}
+              {#if d.duration}<span class="buildable-duration"><i class="fa fa-clock-o"></i> {d.duration}</span>{/if}
             </div>
           {/if}
         {/each}
@@ -391,7 +385,12 @@
   {/if}
 
   {#if timelineEvents.length > 0}
-    <Timeline events={timelineEvents} />
+    <Box border>
+      <HeaderView title="Comments" icon="fa-comments" count={timelineEvents.length} collapsible collapsed={commentsCollapsed} onToggle={() => commentsCollapsed = !commentsCollapsed} />
+      {#if !commentsCollapsed}
+        <Timeline events={timelineEvents} />
+      {/if}
+    </Box>
   {/if}
 
   <ReviewForm {owner} {repo} {number} merged={pr.merged} prState={pr.state} authorLogin={pr.author.login} approved={isApproved} />
@@ -531,10 +530,6 @@
     font-size: 11px;
     color: var(--text-muted);
     font-family: var(--font-mono);
-  }
-  .buildable-elapsed {
-    font-size: 11px;
-    color: var(--text-muted);
   }
   a.buildable-item:hover {
     color: var(--text);

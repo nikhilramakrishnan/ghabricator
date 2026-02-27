@@ -57,11 +57,7 @@
 
 <style>
   .timeline-box {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 4px;
     padding: 10px 12px;
-    margin: 12px 0 0;
   }
   .event {
     display: flex;
