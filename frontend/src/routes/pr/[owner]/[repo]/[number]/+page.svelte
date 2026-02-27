@@ -280,27 +280,6 @@
           in {pr.changedFiles} files
         </span>
       </div>
-      {#if checkRuns.length > 0}
-        <div class="plist-row">
-          <span class="plist-key">{S.pr.buildables}</span>
-          <span class="plist-val checks-val">
-            {#each checkRuns as cr}
-              {@const d = checkRunDisplay(cr)}
-              {#if cr.detailsURL}
-                <a href={cr.detailsURL} target="_blank" rel="noopener" class="check-chip">
-                  <i class="fa {d.icon}" style="color:{d.color}"></i>
-                  {d.name}
-                </a>
-              {:else}
-                <span class="check-chip">
-                  <i class="fa {d.icon}" style="color:{d.color}"></i>
-                  {d.name}
-                </span>
-              {/if}
-            {/each}
-          </span>
-        </div>
-      {/if}
       {#if pr.labels?.length}
         <div class="plist-row">
           <span class="plist-key">{S.pr.labels}</span>
@@ -321,7 +300,30 @@
         </div>
       </div>
     {/if}
+
   </Box>
+
+  {#if checkRuns.length > 0}
+    <Box border>
+      <HeaderView title={S.pr.buildables} icon="fa-cogs" />
+      <div class="buildables-list">
+        {#each checkRuns as cr}
+          {@const d = checkRunDisplay(cr)}
+          {#if cr.detailsURL}
+            <a href={cr.detailsURL} target="_blank" rel="noopener" class="buildable-item">
+              <i class="fa {d.icon}" style="color:{d.color}"></i>
+              <span class="buildable-name">{d.name}</span>
+            </a>
+          {:else}
+            <div class="buildable-item">
+              <i class="fa {d.icon}" style="color:{d.color}"></i>
+              <span class="buildable-name">{d.name}</span>
+            </div>
+          {/if}
+        {/each}
+      </div>
+    </Box>
+  {/if}
 
   {#if compareBase || compareHead}
     <div class="interdiff-indicator">
@@ -465,27 +467,32 @@
     font-weight: 600;
   }
 
-  .checks-val {
-    gap: 10px;
-  }
-
-  .check-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-muted);
-    text-decoration: none;
-    font-size: 13px;
-  }
-  a.check-chip:hover {
-    color: var(--text);
-    text-decoration: none;
-  }
-
   /* Summary body — below property list, separated by border */
   .summary-section {
     padding: 12px 16px;
     border-top: 1px solid var(--border-subtle);
+  }
+
+  /* Buildables */
+  .buildables-list {
+    padding: 4px 16px 8px;
+  }
+
+  .buildable-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .buildable-item:last-child {
+    border-bottom: none;
+  }
+  a.buildable-item:hover {
+    color: var(--text);
   }
 
   .interdiff-indicator {
