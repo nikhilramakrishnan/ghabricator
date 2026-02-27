@@ -114,3 +114,104 @@ a:hover {
   -moz-osx-font-smoothing: grayscale;
 }
 .mrs { margin-right: 6px; }
+
+/* ===== Remarkup (rendered markdown) ===== */
+.remarkup-content h1,
+.remarkup-content h2,
+.remarkup-content h3,
+.remarkup-content h4,
+.remarkup-content h5,
+.remarkup-content h6 {
+  margin: 16px 0 8px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+.remarkup-content h1 { font-size: 20px; }
+.remarkup-content h2 { font-size: 17px; }
+.remarkup-content h3 { font-size: 15px; }
+.remarkup-content h4,
+.remarkup-content h5,
+.remarkup-content h6 { font-size: 13px; }
+
+.remarkup-content p {
+  margin: 8px 0;
+}
+
+.remarkup-content ul,
+.remarkup-content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+.remarkup-content li {
+  margin: 2px 0;
+}
+
+.remarkup-content code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 2px 5px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+}
+
+.remarkup-content pre {
+  margin: 8px 0;
+  padding: 10px 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.remarkup-content pre code {
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.remarkup-content blockquote {
+  margin: 8px 0;
+  padding: 4px 12px;
+  border-left: 3px solid var(--border);
+  color: var(--text-muted);
+}
+
+.remarkup-content table {
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.remarkup-content th,
+.remarkup-content td {
+  border: 1px solid var(--border-subtle);
+  padding: 6px 10px;
+  text-align: left;
+}
+.remarkup-content th {
+  background: var(--bg-card-header);
+  font-weight: 600;
+}
+
+.remarkup-content img {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.remarkup-content hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 12px 0;
+}
+
+.remarkup-content a {
+  color: var(--text-link);
+}
+
+.remarkup-content input[type="checkbox"] {
+  margin-right: 6px;
+}

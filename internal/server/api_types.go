@@ -42,6 +42,14 @@ type APIPRDetailResponse struct {
 	CheckRuns      []APICheckRun                  `json:"checkRuns"`
 	Timeline       []APITimelineEvent             `json:"timeline"`
 	HeraldMatches  []APIHeraldMatch               `json:"heraldMatches,omitempty"`
+	Commits        []APICommit                    `json:"commits"`
+}
+
+type APICommit struct {
+	SHA     string  `json:"sha"`
+	Message string  `json:"message"`
+	Author  APIUser `json:"author"`
+	Date    string  `json:"date"`
 }
 
 type APIPRDetail struct {

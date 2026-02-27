@@ -136,6 +136,13 @@ export interface APIHeraldMatch {
   actions: APIHeraldAction[];
 }
 
+export interface APICommit {
+  sha: string;
+  message: string;
+  author: APIUser;
+  date: string;
+}
+
 export interface APIPRDetailResponse {
   pr: APIPRDetail;
   changesets: APIChangeset[];
@@ -145,6 +152,7 @@ export interface APIPRDetailResponse {
   checkRuns: APICheckRun[];
   timeline: APITimelineEvent[];
   heraldMatches?: APIHeraldMatch[];
+  commits: APICommit[];
 }
 
 // --- Repos ---

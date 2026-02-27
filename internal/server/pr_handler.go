@@ -12,6 +12,7 @@ import (
 	"github.com/nikhilr/ghabricator/internal/diff"
 	ghapi "github.com/nikhilr/ghabricator/internal/github"
 	"github.com/nikhilr/ghabricator/internal/herald"
+	"github.com/nikhilr/ghabricator/internal/remarkup"
 )
 
 // timelineEvent is a unified event for the PR activity timeline.
@@ -130,11 +131,12 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 		comments      []ghapi.ReviewComment
 		reviews       []ghapi.Review
 		issueComments []ghapi.IssueComment
-		prErr, diffErr, commentsErr, reviewsErr, issueCommentsErr error
+		commits       []ghapi.PRCommit
+		prErr, diffErr, commentsErr, reviewsErr, issueCommentsErr, commitsErr error
 	)
 
 	var wg sync.WaitGroup
-	wg.Add(5)
+	wg.Add(6)
 	go func() { defer wg.Done(); pr, prErr = ghapi.FetchPR(ctx, client, owner, repo, number) }()
 	go func() { defer wg.Done(); rawDiff, diffErr = ghapi.FetchDiff(ctx, client, owner, repo, number) }()
 	go func() {
@@ -145,6 +147,10 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		issueComments, issueCommentsErr = ghapi.FetchIssueComments(ctx, client, owner, repo, number)
+	}()
+	go func() {
+		defer wg.Done()
+		commits, commitsErr = ghapi.FetchPRCommits(ctx, client, owner, repo, number)
 	}()
 	wg.Wait()
 
@@ -172,6 +178,9 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 	}
 	if issueCommentsErr != nil {
 		issueComments = nil
+	}
+	if commitsErr != nil {
+		commits = nil
 	}
 
 	// Parse diff.
@@ -322,6 +331,17 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Build commits.
+	apiCommits := make([]APICommit, 0, len(commits))
+	for _, c := range commits {
+		apiCommits = append(apiCommits, APICommit{
+			SHA:     c.SHA,
+			Message: c.Message,
+			Author:  APIUser{Login: c.Author.Login, AvatarURL: c.Author.AvatarURL},
+			Date:    c.Date.Format("2006-01-02T15:04:05Z"),
+		})
+	}
+
 	// Build PR detail.
 	apiLabels := make([]APILabel, 0, len(pr.Labels))
 	for _, l := range pr.Labels {
@@ -336,7 +356,7 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 		PR: APIPRDetail{
 			Number:       pr.Number,
 			Title:        pr.Title,
-			Body:         pr.Body,
+			Body:         remarkup.Render(pr.Body),
 			State:        pr.State,
 			Draft:        pr.Draft,
 			Merged:       pr.Merged,
@@ -358,6 +378,7 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 		CheckRuns:      apiCheckRuns,
 		Timeline:       apiTimeline,
 		HeraldMatches:  apiHeraldMatches,
+		Commits:        apiCommits,
 	}
 
 	jsonOK(w, resp)

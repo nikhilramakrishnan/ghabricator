@@ -1,18 +1,15 @@
 <script lang="ts">
   import { Breadcrumbs, FormationView } from '$lib/components/layout';
-  import {
-    Box, HeaderView, Tag, CurtainBox, PropertyList, StatusList,
-    Timeline, Button
-  } from '$lib/components/phui';
-  import { DiffTable, ChangesetHeader, FileTree } from '$lib/components/diff';
+  import { Box, HeaderView, Tag, Timeline, Button } from '$lib/components/phui';
+  import { DiffTable, ChangesetHeader, CommitHistory, FileTree } from '$lib/components/diff';
   import type { APIReviewComment as DiffComment } from '$lib/components/diff';
   import { ReviewForm } from '$lib/components/review';
-  import { apiPost } from '$lib/api';
+  import { apiFetch, apiPost } from '$lib/api';
   import { S } from '$lib/strings';
   import { addDraft } from '$lib/stores/inline';
   import type {
     APIPRDetailResponse, APIChangeset, APIReviewComment,
-    APICheckRun, APIHeraldMatch
+    APICheckRun, APIHeraldMatch, APICommit
   } from '$lib/types';
   import type { TimelineEvent } from '$lib/components/phui';
 
@@ -28,9 +25,45 @@
   let checkRuns: APICheckRun[] = $derived(resp.checkRuns ?? []);
   let timeline = $derived(resp.timeline ?? []);
   let heraldMatches: APIHeraldMatch[] = $derived(resp.heraldMatches ?? []);
+  let commits: APICommit[] = $derived(resp.commits ?? []);
 
-  // Collapsed state per changeset
-  let collapsedFiles = $state(new Set<number>());
+  // Interdiff state
+  let compareBase = $state<string | null>(null);
+  let compareHead = $state<string | null>(null);
+  let interdiffChangesets = $state<APIChangeset[] | null>(null);
+  let interdiffLoading = $state(false);
+
+  let displayChangesets = $derived(interdiffChangesets ?? changesets);
+
+  async function handleRangeChange(base: string | null, head: string | null) {
+    compareBase = base;
+    compareHead = head;
+    if (base === null && head === null) {
+      interdiffChangesets = null;
+      return;
+    }
+    interdiffLoading = true;
+    try {
+      const params = new URLSearchParams();
+      if (base) params.set('base', base);
+      if (head) params.set('head', head);
+      const resp = await apiFetch<{ changesets: APIChangeset[] }>(
+        `/api/pr/${owner}/${repo}/${number}/compare?${params}`
+      );
+      interdiffChangesets = resp.changesets ?? [];
+    } catch {
+      interdiffChangesets = null;
+      compareBase = null;
+      compareHead = null;
+    } finally {
+      interdiffLoading = false;
+    }
+  }
+
+  // Collapsed state — auto-fold changesets > 70 rows
+  let collapsedFiles = $state(
+    new Set(changesets.filter(cs => cs.rows.length > 70).map(cs => cs.id))
+  );
   function toggleCollapse(id: number) {
     if (collapsedFiles.has(id)) {
       collapsedFiles.delete(id);
@@ -43,15 +76,13 @@
   // Active file path for file tree highlighting
   let activePath = $state('');
 
-  // Scroll to changeset when clicking file tree
   function scrollToChangeset(path: string) {
     activePath = path;
-    const cs = changesets.find((c) => c.displayPath === path);
+    const cs = displayChangesets.find((c) => c.displayPath === path);
     if (cs) {
       const el = document.getElementById(`C${cs.id}`);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Uncollapse if collapsed
         if (collapsedFiles.has(cs.id)) {
           collapsedFiles.delete(cs.id);
           collapsedFiles = new Set(collapsedFiles);
@@ -62,15 +93,15 @@
 
   // Status badge
   function statusBadge(p: typeof pr): { text: string; color: string } {
-    if (p.merged) return { text: 'Merged', color: 'violet' };
-    if (p.state === 'closed') return { text: 'Closed', color: 'red' };
-    if (p.draft) return { text: 'Draft', color: 'grey' };
-    return { text: 'Open', color: 'green' };
+    if (p.merged) return { text: S.pr.statusMerged, color: 'violet' };
+    if (p.state === 'closed') return { text: S.pr.statusClosed, color: 'red' };
+    if (p.draft) return { text: S.pr.statusDraft, color: 'grey' };
+    return { text: S.pr.statusOpen, color: 'green' };
   }
 
   let status = $derived(statusBadge(pr));
 
-  // Transform API comments to DiffTable format (flat author/avatarURL)
+  // Transform API comments to DiffTable format
   function flattenComments(comments: APIReviewComment[]): DiffComment[] {
     return (comments ?? []).map((c) => ({
       id: c.id,
@@ -124,11 +155,11 @@
 
   function reviewStateDisplay(state: string): { text: string; icon: string; shade: string } {
     switch (state) {
-      case 'APPROVED': return { text: 'Accepted', icon: 'fa-check', shade: 'green' };
-      case 'CHANGES_REQUESTED': return { text: 'Changes Requested', icon: 'fa-times', shade: 'red' };
-      case 'COMMENTED': return { text: 'Commented', icon: 'fa-comment', shade: 'blue' };
-      case 'DISMISSED': return { text: 'Dismissed', icon: 'fa-ban', shade: 'grey' };
-      default: return { text: 'Waiting', icon: 'fa-clock-o', shade: 'orange' };
+      case 'APPROVED': return { text: S.pr.reviewAccepted, icon: 'fa-check', shade: 'green' };
+      case 'CHANGES_REQUESTED': return { text: S.pr.reviewChangesRequested, icon: 'fa-times', shade: 'red' };
+      case 'COMMENTED': return { text: S.pr.reviewCommented, icon: 'fa-comment', shade: 'blue' };
+      case 'DISMISSED': return { text: S.pr.reviewDismissed, icon: 'fa-ban', shade: 'grey' };
+      default: return { text: S.pr.reviewWaiting, icon: 'fa-clock-o', shade: 'orange' };
     }
   }
 
@@ -148,7 +179,7 @@
     return 'blue';
   }
 
-  // Convert timeline events
+  // Timeline events
   let timelineEvents: TimelineEvent[] = $derived(
     timeline.map((ev) => ({
       author: { login: ev.author.login, avatarURL: ev.author.avatarURL },
@@ -171,7 +202,7 @@
       await apiPost('/api/v2/merge', { owner, repo, number, mergeMethod });
       window.location.reload();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Merge failed');
+      alert(e instanceof Error ? e.message : S.pr.mergeFailed);
     } finally {
       actionLoading = false;
     }
@@ -184,7 +215,7 @@
       await apiPost('/api/v2/close', { owner, repo, number, state: newState });
       window.location.reload();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Failed');
+      alert(e instanceof Error ? e.message : S.pr.actionFailed);
     } finally {
       actionLoading = false;
     }
@@ -200,57 +231,157 @@
     { name: `${owner}/${repo}`, href: `/repos/${owner}/${repo}` },
     { name: `D${number}` }
   ]);
-
-  // Action icon for herald
-  function heraldActionIcon(type: string): string {
-    switch (type) {
-      case 'add_reviewer': return 'fa-user-plus';
-      case 'add_label': return 'fa-tag';
-      case 'post_comment': return 'fa-comment';
-      default: return 'fa-bolt';
-    }
-  }
-
-  function heraldActionLabel(type: string): string {
-    switch (type) {
-      case 'add_reviewer': return 'Add reviewer';
-      case 'add_label': return 'Add label';
-      case 'post_comment': return 'Post comment';
-      default: return type;
-    }
-  }
 </script>
 
 <div class="pr-page-header">
   <Breadcrumbs {crumbs} />
-  <div class="pr-title-row">
-    <h1 class="pr-title">
-      <Tag shade={status.color}>{status.text}</Tag>
-      {' '}
-      <span class="pr-number">D{number}</span>
-      {' '}{pr.title}
-    </h1>
-  </div>
+  <h1 class="pr-title">
+    <Tag shade={status.color}>{status.text}</Tag>
+    {pr.title}
+  </h1>
 </div>
 
 <FormationView>
   {#snippet filetree()}
-    <FileTree {changesets} activeFile={activePath} />
+    <FileTree changesets={displayChangesets} activeFile={activePath} />
   {/snippet}
 
-  <!-- Main content -->
-  {#if pr.body?.trim()}
-    <Box border>
-      <HeaderView title={S.pr.summary} icon="fa-file-text-o" />
-      <div class="summary-body">
+  <!-- Revision Contents — Phabricator-style property card -->
+  <Box border>
+    <HeaderView title={S.pr.revisionContents} icon="fa-file-text-o" />
+    <div class="plist">
+      <div class="plist-row">
+        <span class="plist-key">{S.pr.author}</span>
+        <span class="plist-val">
+          {#if pr.author.avatarURL}
+            <img src={pr.author.avatarURL} alt="" class="plist-avatar" />
+          {/if}
+          {pr.author.login}
+        </span>
+      </div>
+      {#if pr.reviewers?.length}
+        <div class="plist-row">
+          <span class="plist-key">{S.pr.reviewers}</span>
+          <span class="plist-val">
+            {#each pr.reviewers as reviewer, i}
+              {#if i > 0}<span class="plist-comma">,</span>{/if}
+              {@const rs = reviewStateForUser(reviewer.login)}
+              {@const display = reviewStateDisplay(rs)}
+              <span class="reviewer-chip">
+                {#if reviewer.avatarURL}
+                  <img src={reviewer.avatarURL} alt="" class="plist-avatar" />
+                {/if}
+                {reviewer.login}
+                <Tag shade={display.shade} icon={display.icon}>{display.text}</Tag>
+              </span>
+            {/each}
+          </span>
+        </div>
+      {/if}
+      <div class="plist-row">
+        <span class="plist-key">{S.pr.repository}</span>
+        <span class="plist-val">
+          <span class="prop-ref">{pr.base.ref}</span>
+          <i class="fa fa-long-arrow-left prop-arrow"></i>
+          <span class="prop-ref">{pr.head.ref}</span>
+        </span>
+      </div>
+      <div class="plist-row">
+        <span class="plist-key">{S.pr.changes}</span>
+        <span class="plist-val">
+          <span class="prop-add">+{pr.additions}</span>{' '}
+          <span class="prop-del">&minus;{pr.deletions}</span>{' '}
+          in {pr.changedFiles} files
+        </span>
+      </div>
+      {#if checkRuns.length > 0}
+        <div class="plist-row">
+          <span class="plist-key">{S.pr.buildables}</span>
+          <span class="plist-val checks-val">
+            {#each checkRuns as cr}
+              {@const d = checkRunDisplay(cr)}
+              {#if cr.detailsURL}
+                <a href={cr.detailsURL} target="_blank" rel="noopener" class="check-chip">
+                  <i class="fa {d.icon}" style="color:{d.color}"></i>
+                  {d.name}
+                </a>
+              {:else}
+                <span class="check-chip">
+                  <i class="fa {d.icon}" style="color:{d.color}"></i>
+                  {d.name}
+                </span>
+              {/if}
+            {/each}
+          </span>
+        </div>
+      {/if}
+      {#if pr.labels?.length}
+        <div class="plist-row">
+          <span class="plist-key">{S.pr.labels}</span>
+          <span class="plist-val">
+            {#each pr.labels as label}
+              <Tag shade={labelShade(label.color)}>{label.name}</Tag>
+              {' '}
+            {/each}
+          </span>
+        </div>
+      {/if}
+    </div>
+
+    {#if pr.body?.trim()}
+      <div class="summary-section">
         <div class="remarkup-content">
           {@html pr.body}
         </div>
       </div>
-    </Box>
+    {/if}
+  </Box>
+
+  {#if !pr.merged}
+    <div class="action-row">
+      {#if pr.state !== 'closed'}
+        <select bind:value={mergeMethod} class="merge-select">
+          <option value="squash">{S.pr.mergeSquash}</option>
+          <option value="merge">{S.pr.mergeMerge}</option>
+          <option value="rebase">{S.pr.mergeRebase}</option>
+        </select>
+        <Button color="green" icon="fa-check-circle" disabled={actionLoading} onclick={handleMerge}>
+          {S.pr.landRevision}
+        </Button>
+        <Button color="default" icon="fa-times-circle" disabled={actionLoading} onclick={() => handleClose('closed')}>
+          {S.pr.close}
+        </Button>
+      {:else}
+        <Button color="green" icon="fa-refresh" disabled={actionLoading} onclick={() => handleClose('open')}>
+          {S.pr.reopen}
+        </Button>
+      {/if}
+    </div>
   {/if}
 
-  {#each changesets as cs (cs.id)}
+  {#if commits.length > 0}
+    <CommitHistory
+      {commits}
+      baseBranch={pr.base.ref}
+      onRangeChange={handleRangeChange}
+    />
+  {/if}
+
+  {#if compareBase || compareHead}
+    <div class="interdiff-indicator">
+      <i class="fa fa-exchange"></i>
+      {S.pr.showingChanges} {compareBase ? compareBase.slice(0, 7) : pr.base.ref}..{compareHead ? compareHead.slice(0, 7) : S.diff.latest.toLowerCase()}
+    </div>
+  {/if}
+
+  {#if interdiffLoading}
+    <div class="interdiff-loading">
+      <i class="fa fa-circle-o-notch fa-spin"></i> {S.pr.loadingDiff}
+    </div>
+  {/if}
+
+  <!-- Diffs -->
+  {#each displayChangesets as cs (cs.id)}
     {@const collapsed = collapsedFiles.has(cs.id)}
     <div id="C{cs.id}">
       <ChangesetHeader changeset={cs} {collapsed} onToggle={() => toggleCollapse(cs.id)} />
@@ -269,210 +400,165 @@
   {/if}
 
   <ReviewForm {owner} {repo} {number} />
-
-  {#snippet curtain()}
-    <!-- Summary -->
-    <CurtainBox title={S.pr.summary}>
-      <PropertyList items={[
-        { label: S.pr.author, value: pr.author.login },
-        { label: S.pr.status, value: status.text },
-        { label: S.pr.created, value: pr.createdAt },
-        { label: S.pr.updated, value: pr.updatedAt },
-        { label: S.pr.base, value: pr.base.ref },
-        { label: S.pr.head, value: pr.head.ref },
-        { label: S.pr.changes, value: `+${pr.additions} / -${pr.deletions} in ${pr.changedFiles} files` }
-      ]} />
-    </CurtainBox>
-
-    <!-- Reviewers -->
-    <CurtainBox title={S.pr.reviewers}>
-      {#if pr.reviewers?.length}
-        {#each pr.reviewers as reviewer}
-          {@const rs = reviewStateForUser(reviewer.login)}
-          {@const display = reviewStateDisplay(rs)}
-          <div class="reviewer-row">
-            {#if reviewer.avatarURL}
-              <img src={reviewer.avatarURL} alt="" class="reviewer-avatar" />
-            {/if}
-            <span class="reviewer-name">{reviewer.login}</span>
-            <Tag shade={display.shade} icon={display.icon}>{display.text}</Tag>
-          </div>
-        {/each}
-      {:else}
-        <div class="empty-curtain">None assigned</div>
-      {/if}
-    </CurtainBox>
-
-    <!-- Buildables -->
-    {#if checkRuns.length > 0}
-      <CurtainBox title={S.pr.buildables}>
-        <StatusList items={checkRuns.map((cr) => {
-          const d = checkRunDisplay(cr);
-          return { name: d.name, icon: d.icon, color: d.color, href: cr.detailsURL || undefined };
-        })} />
-      </CurtainBox>
-    {/if}
-
-    <!-- Herald -->
-    <CurtainBox title={S.pr.herald}>
-      {#if heraldMatches.length > 0}
-        {#each heraldMatches as match}
-          <div class="herald-match">
-            <i class="fa fa-check mrs herald-check"></i>
-            <a href="/herald/{match.ruleId}"><strong>{match.ruleName}</strong></a>
-            {#if match.actions?.length}
-              <div class="herald-actions">
-                {#each match.actions as action}
-                  <div>
-                    <i class="fa {heraldActionIcon(action.type)} mrs"></i>
-                    {heraldActionLabel(action.type)}: {action.value}
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/each}
-      {:else}
-        <div class="empty-curtain">No rules matched.</div>
-      {/if}
-      <div class="herald-manage">
-        <a href="/herald"><i class="fa fa-list mrs"></i>Manage Rules</a>
-      </div>
-    </CurtainBox>
-
-    <!-- Labels -->
-    {#if pr.labels?.length}
-      <CurtainBox title={S.pr.labels}>
-        {#each pr.labels as label}
-          <Tag shade={labelShade(label.color)}>{label.name}</Tag>
-          {' '}
-        {/each}
-      </CurtainBox>
-    {/if}
-
-    <!-- Actions -->
-    {#if !pr.merged}
-      <div class="curtain-actions">
-        {#if pr.state !== 'closed'}
-          <div class="merge-row">
-            <select bind:value={mergeMethod} class="merge-select">
-              <option value="squash">Squash</option>
-              <option value="merge">Merge</option>
-              <option value="rebase">Rebase</option>
-            </select>
-            <Button color="green" icon="fa-check-circle" disabled={actionLoading} onclick={handleMerge}>
-              Land Revision
-            </Button>
-          </div>
-          <Button color="default" icon="fa-times-circle" disabled={actionLoading} onclick={() => handleClose('closed')}>
-            Close
-          </Button>
-        {:else}
-          <Button color="green" icon="fa-refresh" disabled={actionLoading} onclick={() => handleClose('open')}>
-            Reopen
-          </Button>
-        {/if}
-      </div>
-    {/if}
-  {/snippet}
 </FormationView>
 
 <style>
   .pr-page-header {
-    max-width: 1200px;
-    margin: 0 auto;
     padding: 0 16px;
   }
 
-  .pr-title-row {
-    padding: 8px 0 12px;
-  }
-
   .pr-title {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
     color: var(--text);
     margin: 0;
+    padding: 6px 0 4px;
     line-height: 1.4;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-width: 0;
   }
 
-  .pr-number {
-    color: var(--text-muted);
-    font-weight: normal;
+  /* Property list — Phabricator-style key/value rows */
+  .plist {
+    padding: 8px 16px;
   }
 
-  .summary-body {
-    padding: 10px 12px;
-  }
-
-  .remarkup-content {
+  .plist-row {
+    display: flex;
+    align-items: baseline;
+    padding: 4px 0;
     font-size: 13px;
-    line-height: 1.5;
-    overflow-wrap: break-word;
-    word-break: break-word;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .plist-row:last-child {
+    border-bottom: none;
   }
 
-  .reviewer-row {
+  .plist-key {
+    width: 100px;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .plist-val {
+    flex: 1;
+    color: var(--text);
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
-  .reviewer-avatar {
-    width: 24px;
-    height: 24px;
+  .plist-avatar {
+    width: 20px;
+    height: 20px;
     border-radius: 3px;
+    vertical-align: middle;
   }
 
-  .reviewer-name {
-    font-size: 13px;
+  .plist-comma {
+    margin-right: 4px;
   }
 
-  .empty-curtain {
-    font-size: 13px;
+  .reviewer-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .prop-ref {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg-subtle);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--text);
+  }
+
+  .prop-arrow {
+    font-size: 10px;
+    margin: 0 4px;
     color: var(--text-muted);
   }
 
-  .herald-match {
-    font-size: 12px;
-    margin-bottom: 6px;
-  }
-
-  .herald-check {
+  .prop-add {
     color: var(--green);
-  }
-
-  .herald-actions {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-left: 20px;
-  }
-
-  .herald-manage {
-    margin-top: 8px;
+    font-family: var(--font-mono);
     font-size: 12px;
+    font-weight: 600;
+  }
+  .prop-del {
+    color: var(--red);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
   }
 
-  .curtain-actions {
-    padding: 12px;
+  .checks-val {
+    gap: 10px;
+  }
+
+  .check-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+  }
+  a.check-chip:hover {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  /* Summary body — below property list, separated by border */
+  .summary-section {
+    padding: 12px 16px;
     border-top: 1px solid var(--border-subtle);
   }
 
-  .merge-row {
+  /* Action buttons — outside the card */
+  .action-row {
     display: flex;
-    gap: 8px;
     align-items: center;
-    margin-bottom: 8px;
+    gap: 8px;
+    padding: 10px 0;
   }
 
   .merge-select {
-    font-size: 12px;
-    padding: 4px 6px;
+    font-size: 13px;
+    padding: 6px 8px;
     border: 1px solid var(--border);
     border-radius: 3px;
     background: var(--bg-card);
     color: var(--text);
-    flex: 1;
+  }
+
+  .interdiff-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--blue);
+    background: var(--tag-blue-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  .interdiff-loading {
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
   }
 </style>

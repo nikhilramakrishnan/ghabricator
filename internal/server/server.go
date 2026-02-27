@@ -50,6 +50,9 @@ func (s *Server) routes() {
 	// PR
 	s.mux.Handle("GET /api/pr/{owner}/{repo}/{number}", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIPR)))
 
+	// PR compare (diff between two commits)
+	s.mux.Handle("GET /api/pr/{owner}/{repo}/{number}/compare", s.auth.RequireAuth(http.HandlerFunc(s.handleAPICompare)))
+
 	// Inline comments
 	s.mux.Handle("POST /api/v2/inline", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIInline)))
 

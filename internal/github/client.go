@@ -334,6 +334,61 @@ func FetchIssueComments(ctx context.Context, client *gh.Client, owner, repo stri
 	return result, nil
 }
 
+// FetchPRCommits fetches all commits on a pull request with pagination.
+func FetchPRCommits(ctx context.Context, client *gh.Client, owner, repo string, number int) ([]PRCommit, error) {
+	opts := &gh.ListOptions{PerPage: 100}
+	var result []PRCommit
+	for {
+		commits, resp, err := client.PullRequests.ListCommits(ctx, owner, repo, number, opts)
+		if err != nil {
+			return nil, fmt.Errorf("fetch PR commits: %w", err)
+		}
+		for _, c := range commits {
+			commit := PRCommit{
+				SHA:     c.GetSHA(),
+				Message: c.GetCommit().GetMessage(),
+			}
+			if c.GetAuthor() != nil {
+				commit.Author = User{
+					Login:     c.GetAuthor().GetLogin(),
+					AvatarURL: c.GetAuthor().GetAvatarURL(),
+				}
+			}
+			if c.GetCommit().GetAuthor() != nil {
+				commit.Date = c.GetCommit().GetAuthor().GetDate().Time
+			}
+			result = append(result, commit)
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+	return result, nil
+}
+
+// FetchCompare fetches the raw diff between two refs via the compare API.
+func FetchCompare(ctx context.Context, client *gh.Client, owner, repo, base, head string) (string, error) {
+	url := fmt.Sprintf("repos/%s/%s/compare/%s...%s", owner, repo, base, head)
+	req, err := client.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return "", fmt.Errorf("create compare request: %w", err)
+	}
+	req.Header.Set("Accept", "application/vnd.github.v3.diff")
+
+	resp, err := client.BareDo(ctx, req)
+	if err != nil {
+		return "", fmt.Errorf("fetch compare diff: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("read compare body: %w", err)
+	}
+	return string(body), nil
+}
+
 // SubmitReview submits a pull request review.
 func SubmitReview(ctx context.Context, client *gh.Client, owner, repo string, number int, event, body string, comments []InlineCommentRequest) (*Review, error) {
 	var reviewComments []*gh.DraftReviewComment

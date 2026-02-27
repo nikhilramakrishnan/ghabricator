@@ -65,6 +65,13 @@ type InlineCommentRequest struct {
 	Side string // LEFT or RIGHT
 }
 
+type PRCommit struct {
+	SHA     string
+	Message string
+	Author  User
+	Date    time.Time
+}
+
 type IssueComment struct {
 	ID        int64
 	Author    User

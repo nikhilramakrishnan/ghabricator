@@ -3,12 +3,10 @@
 
   let {
     filetree,
-    children,
-    curtain
+    children
   }: {
     filetree?: Snippet;
     children: Snippet;
-    curtain?: Snippet;
   } = $props();
 
   let collapsed = $state(true);
@@ -41,16 +39,7 @@
   {/if}
   <div class="center">
     <div class="main-content">
-      <div class="columns">
-        <div class="main-col">
-          {@render children()}
-        </div>
-        {#if curtain}
-          <div class="side-col">
-            {@render curtain()}
-          </div>
-        {/if}
-      </div>
+      {@render children()}
     </div>
   </div>
 </div>
@@ -127,21 +116,6 @@
     overflow-x: auto;
   }
   .main-content {
-    max-width: 1200px;
-    margin: 0 auto;
     padding: 0 16px;
-  }
-  .columns {
-    display: flex;
-    gap: 16px;
-  }
-  .main-col {
-    flex: 1;
-    min-width: 0;
-  }
-  .side-col {
-    width: 280px;
-    flex-shrink: 0;
-    padding-top: 16px;
   }
 </style>

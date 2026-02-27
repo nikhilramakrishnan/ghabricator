@@ -36,18 +36,57 @@ export const S = {
 
   // PR detail
   pr: {
+    revisionContents: 'Revision Contents',
     summary: 'Summary',
     reviewers: 'Reviewers',
     buildables: 'Buildables',
     herald: 'Herald',
     labels: 'Labels',
     author: 'Author',
+    repository: 'Repository',
     status: 'Status',
     created: 'Created',
     updated: 'Updated',
     base: 'Base',
     head: 'Head',
     changes: 'Changes',
+    landRevision: 'Land Revision',
+    close: 'Close',
+    reopen: 'Reopen',
+    mergeSquash: 'Squash',
+    mergeMerge: 'Merge',
+    mergeRebase: 'Rebase',
+    mergeFailed: 'Merge failed',
+    actionFailed: 'Failed',
+    // Status badges
+    statusOpen: 'Open',
+    statusClosed: 'Closed',
+    statusMerged: 'Merged',
+    statusDraft: 'Draft',
+    // Review states
+    reviewAccepted: 'Accepted',
+    reviewChangesRequested: 'Changes Requested',
+    reviewCommented: 'Commented',
+    reviewDismissed: 'Dismissed',
+    reviewWaiting: 'Waiting',
+    // Interdiff
+    showingChanges: 'Showing changes',
+    loadingDiff: 'Loading diff...',
+  },
+
+  // Diff / Commit history
+  diff: {
+    title: 'Diff History',
+    showChangesFrom: 'Show changes from',
+    to: 'to',
+    baseSuffix: '(base)',
+    latest: 'Latest',
+    colSha: 'SHA',
+    colAuthor: 'Author',
+    colMessage: 'Message',
+    colDate: 'Date',
+    justNow: 'just now',
+    yesterday: 'yesterday',
   },
 
   // Actions
