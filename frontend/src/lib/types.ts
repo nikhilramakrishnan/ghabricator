@@ -256,6 +256,28 @@ export interface HeraldRule {
   updated_at: string;
 }
 
+// --- Actions / Workflow Runs ---
+
+export interface APIWorkflowRun {
+  id: number;
+  name: string;
+  displayTitle: string;
+  status: string;
+  conclusion: string;
+  branch: string;
+  event: string;
+  actor: APIUser;
+  repoOwner: string;
+  repoName: string;
+  durationMs: number;
+  htmlURL: string;
+  createdAt: string;
+}
+
+export interface APIWorkflowRunsResponse {
+  runs: APIWorkflowRun[];
+}
+
 // --- Search ---
 
 export interface APISearchPR {

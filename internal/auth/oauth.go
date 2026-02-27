@@ -52,6 +52,26 @@ func (h *OAuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   600,
 	})
+	// Remember the origin so we redirect back after OAuth callback.
+	if origin := r.Header.Get("Origin"); origin != "" {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "oauth_origin",
+			Value:    origin,
+			Path:     "/",
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   600,
+		})
+	} else if ref := r.Referer(); ref != "" {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "oauth_origin",
+			Value:    ref,
+			Path:     "/",
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   600,
+		})
+	}
 	url := h.config.AuthCodeURL(state)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
@@ -97,7 +117,18 @@ func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	sess := h.store.Create(token, user.GetLogin(), user.GetAvatarURL())
 	h.store.SetCookie(w, sess.ID)
 
-	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	// Redirect back to the frontend origin if we saved one during login.
+	redirect := "/"
+	if c, err := r.Cookie("oauth_origin"); err == nil && c.Value != "" {
+		redirect = c.Value
+		http.SetCookie(w, &http.Cookie{
+			Name:   "oauth_origin",
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1,
+		})
+	}
+	http.Redirect(w, r, redirect, http.StatusTemporaryRedirect)
 }
 
 // HandleLogout clears the session.

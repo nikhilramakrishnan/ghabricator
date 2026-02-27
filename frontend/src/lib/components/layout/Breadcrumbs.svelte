@@ -20,7 +20,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 16px;
+    padding: 4px 0;
     font-size: 12px;
     color: var(--text-muted);
   }

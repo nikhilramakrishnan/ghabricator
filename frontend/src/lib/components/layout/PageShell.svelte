@@ -50,7 +50,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 0 12px;
+    padding: 8px 0 6px;
   }
   .page-title {
     font-size: 18px;

@@ -1,42 +1,47 @@
 <script lang="ts">
   import { user } from '$lib/stores/auth';
   import { theme, toggleTheme } from '$lib/stores/theme';
+  import { goto } from '$app/navigation';
 
   let { navActive = '' }: { navActive?: string } = $props();
+
+  let searchQuery = $state('');
+
+  function handleSearch(e: Event) {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      goto(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  }
 </script>
 
-<nav class="navbar">
+<nav class="topbar">
   <a class="brand" href="/">
     <i class="fa fa-cog"></i>
     <span>Ghabricator</span>
   </a>
+
+  <form class="search-form" onsubmit={handleSearch}>
+    <i class="fa fa-search search-icon"></i>
+    <input
+      type="text"
+      bind:value={searchQuery}
+      placeholder="Search..."
+      class="search-input"
+    />
+  </form>
+
+  <div class="spacer"></div>
+
   {#if $user}
-    <a href="/dashboard" class="nav-link" class:active={navActive === 'revisions'}>
-      <i class="fa fa-code-fork"></i> Revisions
-    </a>
-    <a href="/repos" class="nav-link" class:active={navActive === 'repos'}>
-      <i class="fa fa-database"></i> Repos
-    </a>
-    <a href="/paste" class="nav-link" class:active={navActive === 'paste'}>
-      <i class="fa fa-clipboard"></i> Paste
-    </a>
-    <a href="/herald" class="nav-link" class:active={navActive === 'herald'}>
-      <i class="fa fa-bullhorn"></i> Herald
-    </a>
-    <a href="/search" class="nav-link" class:active={navActive === 'search'}>
-      <i class="fa fa-search"></i> Search
-    </a>
-    <div class="spacer"></div>
     <a href="/api/auth/logout" title="Log out ({$user.login})" class="user-menu">
       {#if $user.avatarURL}
         <img src={$user.avatarURL} alt="" />
       {:else}
         <i class="fa fa-user"></i>
       {/if}
-      <span>{$user.login}</span>
     </a>
   {:else}
-    <div class="spacer"></div>
     <a href="/api/auth/github" class="login-btn">
       <i class="fa fa-github"></i> Sign in
     </a>
@@ -47,12 +52,12 @@
 </nav>
 
 <style>
-  .navbar {
+  .topbar {
     display: flex;
     align-items: center;
     height: 44px;
     padding: 0 16px;
-    gap: 4px;
+    gap: 12px;
     background: var(--nav-bg);
     color: var(--text-on-dark);
   }
@@ -63,34 +68,55 @@
     color: #fff;
     font-weight: 700;
     font-size: 14px;
-    margin-right: 16px;
     text-decoration: none;
+    flex-shrink: 0;
+    width: 184px; /* 200px sidebar - 16px padding */
   }
   .brand:hover { text-decoration: none; }
   .brand .fa { font-size: 18px; opacity: 0.8; }
-  .nav-link {
-    color: rgba(255,255,255,0.7);
-    font-size: 13px;
-    padding: 8px 12px;
-    text-decoration: none;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+
+  .search-form {
+    position: relative;
+    flex: 0 1 320px;
   }
-  .nav-link:hover { color: #fff; background: rgba(255,255,255,0.08); text-decoration: none; }
-  .nav-link.active { color: #fff; background: rgba(255,255,255,0.12); }
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,0.4);
+    font-size: 12px;
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    padding: 6px 10px 6px 30px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 13px;
+    outline: none;
+  }
+  .search-input::placeholder {
+    color: rgba(255,255,255,0.4);
+  }
+  .search-input:focus {
+    border-color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.12);
+  }
+
   .spacer { flex: 1; }
+
   .user-menu {
     display: flex;
     align-items: center;
-    gap: 8px;
     color: rgba(255,255,255,0.8);
-    font-size: 13px;
     text-decoration: none;
   }
   .user-menu:hover { text-decoration: none; }
   .user-menu img { width: 28px; height: 28px; border-radius: 3px; }
+
   .login-btn {
     color: rgba(255,255,255,0.8);
     font-size: 13px;
@@ -100,6 +126,7 @@
     gap: 6px;
   }
   .login-btn:hover { text-decoration: none; color: #fff; }
+
   .theme-toggle {
     color: rgba(255,255,255,0.5);
     font-size: 16px;
@@ -107,7 +134,6 @@
     cursor: pointer;
     background: none;
     border: none;
-    margin-left: 8px;
   }
   .theme-toggle:hover { color: rgba(255,255,255,0.8); }
 </style>

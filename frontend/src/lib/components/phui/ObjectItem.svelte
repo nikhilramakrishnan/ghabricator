@@ -59,7 +59,7 @@
   .item {
     position: relative;
     border-bottom: 1px solid var(--border-subtle);
-    padding: 10px 12px;
+    padding: 7px 12px;
   }
   .item:last-child {
     border-bottom: none;

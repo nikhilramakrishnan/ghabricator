@@ -18,7 +18,7 @@
   .box {
     background: var(--bg-card);
     border-radius: 4px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     overflow: hidden;
   }
   .bordered {

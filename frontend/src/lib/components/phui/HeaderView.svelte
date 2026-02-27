@@ -20,7 +20,7 @@
 <style>
   .header {
     background: var(--bg-card-header);
-    padding: 8px 12px;
+    padding: 6px 12px;
     border-bottom: 1px solid var(--border-subtle);
   }
   .header-title {

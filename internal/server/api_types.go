@@ -320,3 +320,25 @@ type APISearchResponse struct {
 	Code  []APISearchCodeResult  `json:"code,omitempty"`
 	Repos []APISearchRepoResult  `json:"repos,omitempty"`
 }
+
+// --- Workflow Runs API types ---
+
+type APIWorkflowRunsResponse struct {
+	Runs []APIWorkflowRun `json:"runs"`
+}
+
+type APIWorkflowRun struct {
+	ID           int64   `json:"id"`
+	Name         string  `json:"name"`
+	DisplayTitle string  `json:"displayTitle"`
+	Status       string  `json:"status"`
+	Conclusion   string  `json:"conclusion"`
+	Branch       string  `json:"branch"`
+	Event        string  `json:"event"`
+	Actor        APIUser `json:"actor"`
+	RepoOwner    string  `json:"repoOwner"`
+	RepoName     string  `json:"repoName"`
+	DurationMs   int64   `json:"durationMs"`
+	HTMLURL      string  `json:"htmlURL"`
+	CreatedAt    string  `json:"createdAt"`
+}
