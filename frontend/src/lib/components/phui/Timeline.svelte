@@ -8,6 +8,8 @@
     iconColor: string;
   };
 
+  import { formatTimestamp } from '$lib/time';
+
   let { events }: { events: TimelineEvent[] } = $props();
 
   function iconBg(color: string): string {
@@ -41,7 +43,7 @@
       <div class="event-body" class:major={isMajor}>
         <div class="event-header">
           <span><strong>{ev.author.login}</strong> {ev.action}</span>
-          <span class="event-time">{ev.createdAt}</span>
+          <span class="event-time">{formatTimestamp(ev.createdAt)}</span>
         </div>
         {#if isMajor}
           <div class="event-content">

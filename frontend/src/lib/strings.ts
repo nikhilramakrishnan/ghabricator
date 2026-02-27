@@ -40,6 +40,7 @@ export const S = {
     summary: 'Summary',
     reviewers: 'Reviewers',
     buildables: 'Buildables',
+    changeset: 'Changeset',
     herald: 'Herald',
     labels: 'Labels',
     author: 'Author',

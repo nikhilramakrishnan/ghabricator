@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { APIReviewComment } from './DiffTable.svelte';
+  import { formatTimestamp } from '$lib/time';
 
   let {
     comment,
@@ -19,7 +20,7 @@
     {/if}
     <strong>{comment.author}</strong>
     {#if comment.createdAt}
-      <span class="time">{comment.createdAt}</span>
+      <span class="time">{formatTimestamp(comment.createdAt)}</span>
     {/if}
   </div>
   <div class="inline-body">

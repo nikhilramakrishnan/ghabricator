@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { APICommit } from '$lib/types';
   import { S } from '$lib/strings';
+  import { formatTimestamp } from '$lib/time';
 
   let {
     commits,
@@ -25,23 +26,6 @@
     return nl > 0 ? msg.slice(0, nl) : msg;
   }
 
-  function formatDate(dateStr: string): string {
-    const d = new Date(dateStr);
-    const now = new Date();
-    const diff = now.getTime() - d.getTime();
-    const days = Math.floor(diff / 86400000);
-    if (days === 0) {
-      const hours = Math.floor(diff / 3600000);
-      if (hours === 0) {
-        const mins = Math.floor(diff / 60000);
-        return mins <= 1 ? S.diff.justNow : `${mins}m ago`;
-      }
-      return `${hours}h ago`;
-    }
-    if (days === 1) return S.diff.yesterday;
-    if (days < 30) return `${days}d ago`;
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }
 
   function handleRangeChange() {
     if (!onRangeChange) return;
@@ -103,7 +87,7 @@
               {c.author.login}
             </td>
             <td class="ch-msg">{firstLine(c.message)}</td>
-            <td class="ch-date">{formatDate(c.date)}</td>
+            <td class="ch-date">{formatTimestamp(c.date)}</td>
           </tr>
         {/each}
       </tbody>

@@ -6,6 +6,7 @@
   import { ReviewForm } from '$lib/components/review';
   import { apiFetch } from '$lib/api';
   import { S } from '$lib/strings';
+  import { formatTimestamp } from '$lib/time';
   import { addDraft } from '$lib/stores/inline';
   import type {
     APIPRDetailResponse, APIChangeset, APIReviewComment,
@@ -32,6 +33,7 @@
   let compareHead = $state<string | null>(null);
   let interdiffChangesets = $state<APIChangeset[] | null>(null);
   let interdiffLoading = $state(false);
+  let changesetCollapsed = $state(false);
 
   let displayChangesets = $derived(interdiffChangesets ?? changesets);
 
@@ -116,7 +118,7 @@
   }
 
   // Check run icon/color mapping
-  function checkRunDisplay(cr: APICheckRun): { icon: string; color: string; name: string } {
+  function checkRunDisplay(cr: APICheckRun): { icon: string; color: string; name: string; duration: string; elapsed: string } {
     let icon: string;
     let color: string;
     if (cr.status !== 'completed') {
@@ -137,7 +139,24 @@
     if (cr.appName && cr.appName !== 'GitHub Actions') {
       name = cr.appName + ' / ' + name;
     }
-    return { icon, color, name };
+    // Duration
+    let duration = '';
+    if (cr.startedAt && cr.completedAt) {
+      const start = new Date(cr.startedAt).getTime();
+      const end = new Date(cr.completedAt).getTime();
+      const secs = Math.floor((end - start) / 1000);
+      if (secs >= 60) {
+        const m = Math.floor(secs / 60);
+        const s = secs % 60;
+        duration = s > 0 ? `${m}m ${s}s` : `${m}m`;
+      } else if (secs > 0) {
+        duration = `${secs}s`;
+      }
+    }
+    // Elapsed
+    const ref = cr.completedAt || cr.startedAt;
+    const elapsed = ref ? formatTimestamp(ref) : '';
+    return { icon, color, name, duration, elapsed };
   }
 
   // Is the PR approved? Check if any reviewer's latest review is APPROVED
@@ -313,11 +332,17 @@
             <a href={cr.detailsURL} target="_blank" rel="noopener" class="buildable-item">
               <i class="fa {d.icon}" style="color:{d.color}"></i>
               <span class="buildable-name">{d.name}</span>
+
+              {#if d.duration}<span class="buildable-duration">{d.duration}</span>{/if}
+              {#if d.elapsed}<span class="buildable-elapsed">{d.elapsed}</span>{/if}
             </a>
           {:else}
             <div class="buildable-item">
               <i class="fa {d.icon}" style="color:{d.color}"></i>
               <span class="buildable-name">{d.name}</span>
+
+              {#if d.duration}<span class="buildable-duration">{d.duration}</span>{/if}
+              {#if d.elapsed}<span class="buildable-elapsed">{d.elapsed}</span>{/if}
             </div>
           {/if}
         {/each}
@@ -325,33 +350,37 @@
     </Box>
   {/if}
 
-  {#if compareBase || compareHead}
-    <div class="interdiff-indicator">
-      <i class="fa fa-exchange"></i>
-      {S.pr.showingChanges} {compareBase ? compareBase.slice(0, 7) : pr.base.ref}..{compareHead ? compareHead.slice(0, 7) : S.diff.latest.toLowerCase()}
-    </div>
-  {/if}
-
-  {#if interdiffLoading}
-    <div class="interdiff-loading">
-      <i class="fa fa-circle-o-notch fa-spin"></i> {S.pr.loadingDiff}
-    </div>
-  {/if}
-
-  <!-- Diffs -->
-  {#each displayChangesets as cs (cs.id)}
-    {@const collapsed = collapsedFiles.has(cs.id)}
-    <div id="C{cs.id}">
-      <ChangesetHeader changeset={cs} {collapsed} onToggle={() => toggleCollapse(cs.id)} />
-      {#if !collapsed}
-        <DiffTable
-          changeset={cs}
-          comments={flattenComments(commentsByPath[cs.displayPath] ?? [])}
-          onNewComment={handleNewComment}
-        />
+  <Box border>
+    <HeaderView title={S.pr.changeset} icon="fa-files-o" count={displayChangesets.length} collapsible collapsed={changesetCollapsed} onToggle={() => changesetCollapsed = !changesetCollapsed} />
+    {#if !changesetCollapsed}
+      {#if compareBase || compareHead}
+        <div class="interdiff-indicator">
+          <i class="fa fa-exchange"></i>
+          {S.pr.showingChanges} {compareBase ? compareBase.slice(0, 7) : pr.base.ref}..{compareHead ? compareHead.slice(0, 7) : S.diff.latest.toLowerCase()}
+        </div>
       {/if}
-    </div>
-  {/each}
+
+      {#if interdiffLoading}
+        <div class="interdiff-loading">
+          <i class="fa fa-circle-o-notch fa-spin"></i> {S.pr.loadingDiff}
+        </div>
+      {/if}
+
+      {#each displayChangesets as cs (cs.id)}
+        {@const collapsed = collapsedFiles.has(cs.id)}
+        <div id="C{cs.id}">
+          <ChangesetHeader changeset={cs} {collapsed} onToggle={() => toggleCollapse(cs.id)} />
+          {#if !collapsed}
+            <DiffTable
+              changeset={cs}
+              comments={flattenComments(commentsByPath[cs.displayPath] ?? [])}
+              onNewComment={handleNewComment}
+            />
+          {/if}
+        </div>
+      {/each}
+    {/if}
+  </Box>
 
   {#if commits.length > 0}
     <CommitHistory
@@ -490,6 +519,22 @@
   }
   .buildable-item:last-child {
     border-bottom: none;
+  }
+  .buildable-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .buildable-duration {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+  .buildable-elapsed {
+    font-size: 11px;
+    color: var(--text-muted);
   }
   a.buildable-item:hover {
     color: var(--text);
