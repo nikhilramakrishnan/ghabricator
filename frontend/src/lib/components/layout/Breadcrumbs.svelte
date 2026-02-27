@@ -20,11 +20,9 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 16px;
-    font-size: 13px;
+    padding: 6px 16px;
+    font-size: 12px;
     color: var(--text-muted);
-    background: var(--bg-card);
-    border-bottom: 1px solid var(--border);
   }
   .sep {
     margin: 0 2px;
