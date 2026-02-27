@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Breadcrumbs, FormationView } from '$lib/components/layout';
-  import { Box, HeaderView, Tag, Timeline, Button } from '$lib/components/phui';
+  import { Box, HeaderView, Tag, Timeline } from '$lib/components/phui';
   import { DiffTable, ChangesetHeader, CommitHistory, FileTree } from '$lib/components/diff';
   import type { APIReviewComment as DiffComment } from '$lib/components/diff';
   import { ReviewForm } from '$lib/components/review';
-  import { apiFetch, apiPost } from '$lib/api';
+  import { apiFetch } from '$lib/api';
   import { S } from '$lib/strings';
   import { addDraft } from '$lib/stores/inline';
   import type {
@@ -140,6 +140,21 @@
     return { icon, color, name };
   }
 
+  // Is the PR approved? Check if any reviewer's latest review is APPROVED
+  let isApproved = $derived.by(() => {
+    const latest = new Map<string, { state: string; at: string }>();
+    for (const r of reviews) {
+      const prev = latest.get(r.author.login);
+      if (!prev || r.createdAt > prev.at) {
+        latest.set(r.author.login, { state: r.state, at: r.createdAt });
+      }
+    }
+    for (const { state } of latest.values()) {
+      if (state === 'APPROVED') return true;
+    }
+    return false;
+  });
+
   // Review state helpers
   function reviewStateForUser(login: string): string {
     let latest: { state: string; createdAt: string } | null = null;
@@ -192,34 +207,6 @@
   );
 
   // Merge/close actions
-  let actionLoading = $state(false);
-
-  async function handleMerge() {
-    if (actionLoading) return;
-    actionLoading = true;
-    try {
-      await apiPost('/api/v2/merge', { owner, repo, number, mergeMethod: 'squash' });
-      window.location.reload();
-    } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : S.pr.mergeFailed);
-    } finally {
-      actionLoading = false;
-    }
-  }
-
-  async function handleClose(newState: string) {
-    if (actionLoading) return;
-    actionLoading = true;
-    try {
-      await apiPost('/api/v2/close', { owner, repo, number, state: newState });
-      window.location.reload();
-    } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : S.pr.actionFailed);
-    } finally {
-      actionLoading = false;
-    }
-  }
-
   function handleNewComment(path: string, line: number, side: string) {
     addDraft(path, line, side);
   }
@@ -376,24 +363,7 @@
     <Timeline events={timelineEvents} />
   {/if}
 
-  <ReviewForm {owner} {repo} {number} />
-
-  {#if !pr.merged}
-    <div class="action-row">
-      {#if pr.state !== 'closed'}
-        <Button color="green" icon="fa-check-circle" disabled={actionLoading} onclick={handleMerge}>
-          {S.pr.landRevision}
-        </Button>
-        <Button color="default" icon="fa-times-circle" disabled={actionLoading} onclick={() => handleClose('closed')}>
-          {S.pr.close}
-        </Button>
-      {:else}
-        <Button color="green" icon="fa-refresh" disabled={actionLoading} onclick={() => handleClose('open')}>
-          {S.pr.reopen}
-        </Button>
-      {/if}
-    </div>
-  {/if}
+  <ReviewForm {owner} {repo} {number} merged={pr.merged} prState={pr.state} authorLogin={pr.author.login} approved={isApproved} />
 </FormationView>
 
 <style>
@@ -516,14 +486,6 @@
   .summary-section {
     padding: 12px 16px;
     border-top: 1px solid var(--border-subtle);
-  }
-
-  /* Action buttons — outside the card */
-  .action-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 0;
   }
 
   .interdiff-indicator {

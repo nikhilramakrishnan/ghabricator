@@ -161,10 +161,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border-subtle);
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
     font-size: 13px;
     flex-wrap: wrap;
+    background: var(--bg-subtle);
   }
 
   .ch-label {
@@ -194,13 +195,13 @@
 
   .ch-table th {
     text-align: left;
-    padding: 5px 12px;
+    padding: 7px 12px;
     font-size: 11px;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border);
   }
 
   .ch-th-sha { width: 80px; }
@@ -219,16 +220,13 @@
   }
 
   .ch-row td {
-    padding: 5px 12px;
+    padding: 8px 12px;
     vertical-align: middle;
   }
 
   .ch-sha code {
     font-family: var(--font-mono);
     font-size: 12px;
-    background: var(--bg-subtle);
-    padding: 1px 5px;
-    border-radius: 3px;
     color: var(--text-link);
   }
 
