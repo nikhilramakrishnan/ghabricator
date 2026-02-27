@@ -53,11 +53,12 @@
               {#if pr.reviewers}
                 {#each pr.reviewers as reviewer}
                   {#if reviewer.avatarURL}
-                    <span
-                      class="phui-oi-handle-icon"
+                    <img
+                      class="reviewer-avatar"
+                      src={reviewer.avatarURL}
+                      alt={reviewer.login}
                       title={reviewer.login}
-                      style="background-image:url({reviewer.avatarURL})"
-                    ></span>
+                    />
                   {/if}
                 {/each}
               {/if}
@@ -100,11 +101,12 @@
               {#if pr.reviewers}
                 {#each pr.reviewers as reviewer}
                   {#if reviewer.avatarURL}
-                    <span
-                      class="phui-oi-handle-icon"
+                    <img
+                      class="reviewer-avatar"
+                      src={reviewer.avatarURL}
+                      alt={reviewer.login}
                       title={reviewer.login}
-                      style="background-image:url({reviewer.avatarURL})"
-                    ></span>
+                    />
                   {/if}
                 {/each}
               {/if}
@@ -115,3 +117,12 @@
     {/if}
   </Box>
 </PageShell>
+
+<style>
+  .reviewer-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+</style>

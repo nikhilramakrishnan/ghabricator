@@ -66,10 +66,8 @@
   }
 </script>
 
-<div class="phui-two-column-view">
-  <div class="phui-two-column-container">
-    <Breadcrumbs {crumbs} />
-    <div class="phui-two-column-content">
+<div class="page-wrapper">
+  <Breadcrumbs {crumbs} />
 
 {#if mode === 'error'}
   <InfoView severity="warning" icon="fa-exclamation-triangle">
@@ -80,38 +78,39 @@
   {@const tree = data.tree}
   {@const info = tree.repoInfo}
   <CurtainLayout>
-    <table class="phui-oi-list-view" style="width:100%;border-collapse:collapse;font-size:13px">
+    <table class="file-table">
       <thead>
-        <tr style="border-bottom:2px solid #c7ccd9;text-align:left">
-          <th style="padding:8px 12px">Name</th>
-          <th style="padding:8px 12px;width:80px">Type</th>
-          <th style="padding:8px 12px;width:100px;text-align:right">Size</th>
+        <tr class="file-table-head">
+          <th class="file-th">Name</th>
+          <th class="file-th file-th-type">Type</th>
+          <th class="file-th file-th-size">Size</th>
         </tr>
       </thead>
       <tbody>
         {#if path}
-          <tr style="border-bottom:1px solid #e3e4e8">
-            <td style="padding:6px 12px">
-              <a href={parentHref()} style="text-decoration:none;color:#136CB2">
-                <span class="phui-icon-view phui-font-fa fa-level-up mrs"></span>..
+          <tr class="file-row">
+            <td class="file-td">
+              <a href={parentHref()} class="file-link">
+                <i class="fa fa-level-up mrs"></i>..
               </a>
             </td>
-            <td style="padding:6px 12px;color:#6b748c"></td>
-            <td style="padding:6px 12px"></td>
+            <td class="file-td file-td-muted"></td>
+            <td class="file-td"></td>
           </tr>
         {/if}
         {#each tree.entries as entry}
-          <tr style="border-bottom:1px solid #e3e4e8">
-            <td style="padding:6px 12px">
-              <a href={entryHref(entry)} style="text-decoration:none;color:#136CB2">
-                <span class="phui-icon-view phui-font-fa {entry.type === 'dir' ? 'fa-folder' : 'fa-file-o'} mrs"
-                  style="color:{entry.type === 'dir' ? '#8C6E00' : '#6b748c'}"
-                ></span>
+          <tr class="file-row">
+            <td class="file-td">
+              <a href={entryHref(entry)} class="file-link">
+                <i class="fa {entry.type === 'dir' ? 'fa-folder' : 'fa-file-o'} mrs"
+                  class:icon-folder={entry.type === 'dir'}
+                  class:icon-file={entry.type !== 'dir'}
+                ></i>
                 {entry.name}
               </a>
             </td>
-            <td style="padding:6px 12px;color:#6b748c">{entry.type === 'dir' ? 'Directory' : 'File'}</td>
-            <td style="padding:6px 12px;text-align:right;color:#6b748c">
+            <td class="file-td file-td-muted">{entry.type === 'dir' ? 'Directory' : 'File'}</td>
+            <td class="file-td file-td-size">
               {entry.type === 'file' ? formatSize(entry.size) : ''}
             </td>
           </tr>
@@ -140,35 +139,35 @@
   {@const info = fileResp.repoInfo}
   <CurtainLayout>
     <!-- File header -->
-    <div class="phui-box phui-box-border phui-object-box">
-      <div class="phui-header-shell">
-        <div class="phui-header-view" style="display:flex;align-items:center;justify-content:space-between">
-          <h1 class="phui-header-header">
-            <span class="phui-icon-view phui-font-fa {isImage(file.name) ? 'fa-file-image-o' : 'fa-file-code-o'}"></span>
-            {file.name}
-            <span style="font-weight:normal;font-size:12px;color:#6b748c;margin-left:8px">{formatSize(file.size)}</span>
-          </h1>
-          {#if file.htmlURL}
-            <a href={file.htmlURL} target="_blank" rel="noopener" class="mood-btn mood-btn-default" style="font-size:12px;padding:4px 10px">
-              <span class="phui-icon-view phui-font-fa fa-github mrs"></span>GitHub
-            </a>
-          {/if}
-        </div>
+    <div class="file-viewer-box">
+      <div class="file-header">
+        <h1 class="file-title">
+          <i class="fa {isImage(file.name) ? 'fa-file-image-o' : 'fa-file-code-o'} mrs"></i>
+          {file.name}
+          <span class="file-size">{formatSize(file.size)}</span>
+        </h1>
+        {#if file.htmlURL}
+          <a href={file.htmlURL} target="_blank" rel="noopener" class="gh-link-btn">
+            <i class="fa fa-github mrs"></i>GitHub
+          </a>
+        {/if}
       </div>
 
       {#if file.rawURL && isImage(file.name)}
-        <div style="padding:16px;text-align:center">
-          <img src={file.rawURL} alt={file.name} style="max-width:100%;border:1px solid #e3e4e8;border-radius:4px" />
+        <div class="image-preview">
+          <img src={file.rawURL} alt={file.name} class="preview-img" />
         </div>
       {:else if file.lines}
-        <div class="phabricator-source-code-container">
-          <table class="phabricator-source-code-view remarkup-code PhabricatorMonospaced chroma">
-            {#each file.lines as line, i}
-              <tr>
-                <th class="phabricator-source-line"><span>{i + 1}</span></th>
-                <td class="phabricator-source-code">{@html line}</td>
-              </tr>
-            {/each}
+        <div class="source-container">
+          <table class="source-table">
+            <tbody>
+              {#each file.lines as line, i}
+                <tr>
+                  <th class="line-number"><span>{i + 1}</span></th>
+                  <td class="line-code">{@html line}</td>
+                </tr>
+              {/each}
+            </tbody>
           </table>
         </div>
       {/if}
@@ -186,7 +185,162 @@
     {/snippet}
   </CurtainLayout>
 {/if}
-
-    </div>
-  </div>
 </div>
+
+<style>
+  .page-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  /* File tree table */
+  .file-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  .file-table-head {
+    border-bottom: 2px solid var(--border);
+    text-align: left;
+  }
+
+  .file-th {
+    padding: 8px 12px;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .file-th-type {
+    width: 80px;
+  }
+
+  .file-th-size {
+    width: 100px;
+    text-align: right;
+  }
+
+  .file-row {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .file-row:hover {
+    background: var(--bg-hover);
+  }
+
+  .file-td {
+    padding: 6px 12px;
+  }
+
+  .file-td-muted {
+    color: var(--text-muted);
+  }
+
+  .file-td-size {
+    text-align: right;
+    color: var(--text-muted);
+  }
+
+  .file-link {
+    text-decoration: none;
+  }
+
+  .icon-folder {
+    color: var(--orange);
+  }
+
+  .icon-file {
+    color: var(--text-muted);
+  }
+
+  /* File viewer */
+  .file-viewer-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  .file-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-card-header);
+  }
+
+  .file-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .file-size {
+    font-weight: normal;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .gh-link-btn {
+    font-size: 12px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    text-decoration: none;
+    background: var(--bg-card);
+  }
+
+  .gh-link-btn:hover {
+    background: var(--bg-hover);
+    text-decoration: none;
+  }
+
+  .image-preview {
+    padding: 16px;
+    text-align: center;
+  }
+
+  .preview-img {
+    max-width: 100%;
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+  }
+
+  .source-container {
+    overflow-x: auto;
+  }
+
+  .source-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .line-number {
+    width: 1%;
+    min-width: 44px;
+    padding: 0 8px;
+    text-align: right;
+    color: var(--text-muted);
+    user-select: none;
+    white-space: nowrap;
+    vertical-align: top;
+    background: var(--bg-subtle);
+    border-right: 1px solid var(--border-subtle);
+  }
+
+  .line-code {
+    padding: 0 12px;
+    white-space: pre;
+    color: var(--text);
+  }
+</style>

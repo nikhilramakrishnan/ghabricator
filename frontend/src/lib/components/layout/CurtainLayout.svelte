@@ -10,13 +10,28 @@
   } = $props();
 </script>
 
-<div class="phui-two-column-row grouped">
-  <div class="phui-main-column">
+<div class="curtain-layout">
+  <div class="main-col">
     {@render children()}
   </div>
   {#if curtain}
-    <div class="phui-side-column">
+    <div class="side-col">
       {@render curtain()}
     </div>
   {/if}
 </div>
+
+<style>
+  .curtain-layout {
+    display: flex;
+    gap: 16px;
+  }
+  .main-col {
+    flex: 1;
+    min-width: 0;
+  }
+  .side-col {
+    width: 280px;
+    flex-shrink: 0;
+  }
+</style>

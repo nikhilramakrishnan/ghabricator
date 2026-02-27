@@ -25,10 +25,10 @@
   }
 </script>
 
-<div class="mood-changeset-header" role="button" tabindex="0" onclick={onToggle} onkeydown={(e) => e.key === 'Enter' && onToggle?.()}>
-  <span class="phui-icon-view phui-font-fa {collapsed ? 'fa-chevron-right' : 'fa-chevron-down'} changeset-collapse-toggle"></span>
-  <span class="phui-icon-view phui-font-fa {fileIcon(changeset.displayPath)}" style="opacity:0.5"></span>
-  <span class="differential-changeset-path-name">{changeset.displayPath}</span>
+<div class="changeset-header" role="button" tabindex="0" onclick={onToggle} onkeydown={(e) => e.key === 'Enter' && onToggle?.()}>
+  <i class="fa {collapsed ? 'fa-chevron-right' : 'fa-chevron-down'} toggle-icon"></i>
+  <i class="fa {fileIcon(changeset.displayPath)} file-icon"></i>
+  <span class="path-name">{changeset.displayPath}</span>
   <span class="stats">
     {#if changeset.linesAdded > 0}
       <span class="add-stat">+{changeset.linesAdded}</span>
@@ -43,16 +43,16 @@
 </div>
 
 <style>
-  .mood-changeset-header {
-    background: #eceef4;
+  .changeset-header {
+    background: var(--bg-card-header);
     padding: 8px 12px;
-    border-bottom: 1px solid #c7ccd9;
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 13px;
     font-weight: 600;
-    color: #292e36;
+    color: var(--text);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -60,32 +60,26 @@
     user-select: none;
   }
 
-  .stats {
-    font-weight: 400;
-    color: #6b748c;
-    margin-left: auto;
-  }
-
-  .add-stat {
-    color: #139543;
-  }
-
-  .del-stat {
-    color: #c0392b;
-  }
-
-  .changeset-collapse-toggle {
+  .toggle-icon {
     font-size: 12px;
     opacity: 0.6;
   }
 
-  /* Dark mode */
-  :global(.phui-theme-dark) .mood-changeset-header {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: rgba(255, 255, 255, 0.9);
+  .file-icon {
+    opacity: 0.5;
   }
-  :global(.phui-theme-dark) .stats {
-    color: rgba(255, 255, 255, 0.6);
+
+  .stats {
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: auto;
+  }
+
+  .add-stat {
+    color: var(--green);
+  }
+
+  .del-stat {
+    color: var(--red);
   }
 </style>

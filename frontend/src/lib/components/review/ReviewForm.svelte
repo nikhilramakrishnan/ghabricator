@@ -41,7 +41,7 @@
   }
 </script>
 
-<div class="mood-review-form">
+<div class="review-form">
   <textarea
     bind:value={body}
     placeholder="Leave a review comment..."
@@ -53,37 +53,37 @@
       <span class="pending">{$pendingCount} pending comment{$pendingCount === 1 ? '' : 's'}</span>
     {/if}
     <button
-      class="mood-btn mood-btn-default"
+      class="btn"
       disabled={submitting}
       onclick={() => submit('COMMENT')}
     >
       Comment
     </button>
     <button
-      class="mood-btn mood-btn-green"
+      class="btn btn-green"
       disabled={submitting}
       onclick={() => submit('APPROVE')}
     >
-      <span class="phui-icon-view phui-font-fa fa-check mrs"></span>
+      <i class="fa fa-check mrs"></i>
       Accept
     </button>
     <button
-      class="mood-btn mood-btn-red"
+      class="btn btn-red"
       disabled={submitting}
       onclick={() => submit('REQUEST_CHANGES')}
     >
-      <span class="phui-icon-view phui-font-fa fa-times mrs"></span>
+      <i class="fa fa-times mrs"></i>
       Request Changes
     </button>
   </div>
 </div>
 
 <style>
-  .mood-review-form {
-    border: 1px solid #c7ccd9;
+  .review-form {
+    border: 1px solid var(--border);
     border-radius: 4px;
     overflow: hidden;
-    background: #fff;
+    background: var(--bg-card);
   }
 
   textarea {
@@ -97,78 +97,57 @@
     outline: none;
     box-sizing: border-box;
     background: transparent;
-    color: #292e36;
+    color: var(--text);
   }
 
   .form-footer {
-    background: #f6f8fa;
+    background: var(--bg-subtle);
     padding: 8px 12px;
     display: flex;
     align-items: center;
     gap: 8px;
-    border-top: 1px solid #e3e4e8;
+    border-top: 1px solid var(--border-subtle);
   }
 
   .pending {
     font-size: 12px;
-    color: #6b748c;
+    color: var(--text-muted);
     margin-right: auto;
   }
 
-  .mood-btn {
+  .btn {
     padding: 6px 14px;
-    border: 1px solid #c7ccd9;
+    border: 1px solid var(--border);
     border-radius: 3px;
     font-size: 12px;
     cursor: pointer;
     font-weight: 600;
-    background: #fff;
-    color: #464c5c;
+    background: var(--bg-card);
+    color: var(--text);
   }
-  .mood-btn:hover {
-    background: #f0f0f0;
+  .btn:hover {
+    background: var(--bg-hover);
   }
-  .mood-btn:disabled {
+  .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
 
-  .mood-btn-green {
-    background: #139543;
-    color: #fff;
-    border-color: #139543;
+  .btn-green {
+    background: var(--green);
+    color: var(--text-on-dark);
+    border-color: var(--green);
   }
-  .mood-btn-green:hover {
-    background: #117a38;
-  }
-
-  .mood-btn-red {
-    background: #c0392b;
-    color: #fff;
-    border-color: #c0392b;
-  }
-  .mood-btn-red:hover {
-    background: #a33025;
+  .btn-green:hover {
+    background: var(--green-hover);
   }
 
-  /* Dark mode */
-  :global(.phui-theme-dark) .mood-review-form {
-    background: #26374c;
-    border-color: rgba(255, 255, 255, 0.3);
+  .btn-red {
+    background: var(--red);
+    color: var(--text-on-dark);
+    border-color: var(--red);
   }
-  :global(.phui-theme-dark) textarea {
-    color: rgba(255, 255, 255, 0.9);
-  }
-  :global(.phui-theme-dark) .form-footer {
-    background: #1c293b;
-    border-color: rgba(255, 255, 255, 0.3);
-  }
-  :global(.phui-theme-dark) .mood-btn-default {
-    background: #1c293b;
-    color: rgba(255, 255, 255, 0.8);
-    border-color: rgba(255, 255, 255, 0.3);
-  }
-  :global(.phui-theme-dark) .mood-btn-default:hover {
-    background: #26374c;
+  .btn-red:hover {
+    background: var(--red-hover);
   }
 </style>

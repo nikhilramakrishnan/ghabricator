@@ -10,6 +10,18 @@
   } = $props();
 </script>
 
-<div class="phui-box phui-object-box" class:phui-box-border={border}>
+<div class="box" class:bordered={border}>
   {@render children()}
 </div>
+
+<style>
+  .box {
+    background: var(--bg-card);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .bordered {
+    border: 1px solid var(--border);
+  }
+</style>

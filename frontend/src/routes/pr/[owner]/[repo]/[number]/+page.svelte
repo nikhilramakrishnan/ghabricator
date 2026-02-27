@@ -89,16 +89,16 @@
     let color: string;
     if (cr.status !== 'completed') {
       icon = cr.status === 'in_progress' ? 'fa-circle-o-notch' : 'fa-clock-o';
-      color = cr.status === 'in_progress' ? '#c69026' : '#6b748c';
+      color = cr.status === 'in_progress' ? 'var(--orange)' : 'var(--text-muted)';
     } else {
       switch (cr.conclusion) {
-        case 'success': icon = 'fa-check-circle'; color = '#139543'; break;
-        case 'failure': icon = 'fa-times-circle'; color = '#c0392b'; break;
-        case 'cancelled': icon = 'fa-ban'; color = '#6b748c'; break;
-        case 'skipped': icon = 'fa-minus-circle'; color = '#6b748c'; break;
-        case 'timed_out': icon = 'fa-clock-o'; color = '#c0392b'; break;
-        case 'action_required': icon = 'fa-exclamation-circle'; color = '#c69026'; break;
-        default: icon = 'fa-question-circle'; color = '#6b748c';
+        case 'success': icon = 'fa-check-circle'; color = 'var(--green)'; break;
+        case 'failure': icon = 'fa-times-circle'; color = 'var(--red)'; break;
+        case 'cancelled': icon = 'fa-ban'; color = 'var(--text-muted)'; break;
+        case 'skipped': icon = 'fa-minus-circle'; color = 'var(--text-muted)'; break;
+        case 'timed_out': icon = 'fa-clock-o'; color = 'var(--red)'; break;
+        case 'action_required': icon = 'fa-exclamation-circle'; color = 'var(--orange)'; break;
+        default: icon = 'fa-question-circle'; color = 'var(--text-muted)';
       }
     }
     let name = cr.name;
@@ -199,23 +199,36 @@
     { name: `${owner}/${repo}`, href: `/repos/${owner}/${repo}` },
     { name: `D${number}` }
   ]);
+
+  // Action icon for herald
+  function heraldActionIcon(type: string): string {
+    switch (type) {
+      case 'add_reviewer': return 'fa-user-plus';
+      case 'add_label': return 'fa-tag';
+      case 'post_comment': return 'fa-comment';
+      default: return 'fa-bolt';
+    }
+  }
+
+  function heraldActionLabel(type: string): string {
+    switch (type) {
+      case 'add_reviewer': return 'Add reviewer';
+      case 'add_label': return 'Add label';
+      case 'post_comment': return 'Post comment';
+      default: return type;
+    }
+  }
 </script>
 
-<div class="phui-two-column-view">
-  <div class="phui-two-column-container">
-    <Breadcrumbs {crumbs} />
-    <div class="phui-two-column-header">
-      <div class="phui-header-view">
-        <div class="phui-header-shell">
-          <h1 class="phui-header-header">
-            <Tag shade={status.color}>{status.text}</Tag>
-            {' '}
-            <span class="phui-header-subheader" style="color:rgba(55,55,55,.6);font-weight:normal">D{number}</span>
-            {' '}{pr.title}
-          </h1>
-        </div>
-      </div>
-    </div>
+<div class="pr-page-header">
+  <Breadcrumbs {crumbs} />
+  <div class="pr-title-row">
+    <h1 class="pr-title">
+      <Tag shade={status.color}>{status.text}</Tag>
+      {' '}
+      <span class="pr-number">D{number}</span>
+      {' '}{pr.title}
+    </h1>
   </div>
 </div>
 
@@ -228,8 +241,8 @@
   {#if pr.body?.trim()}
     <Box border>
       <HeaderView title="Summary" icon="fa-file-text-o" />
-      <div style="padding:10px 12px">
-        <div class="phabricator-remarkup" style="font-size:13px;line-height:1.5;overflow-wrap:break-word;word-break:break-word;">
+      <div class="summary-body">
+        <div class="remarkup-content">
           {@html pr.body}
         </div>
       </div>
@@ -276,16 +289,16 @@
         {#each pr.reviewers as reviewer}
           {@const rs = reviewStateForUser(reviewer.login)}
           {@const display = reviewStateDisplay(rs)}
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div class="reviewer-row">
             {#if reviewer.avatarURL}
-              <img src={reviewer.avatarURL} alt="" style="width:24px;height:24px;border-radius:3px" />
+              <img src={reviewer.avatarURL} alt="" class="reviewer-avatar" />
             {/if}
-            <span style="font-size:13px">{reviewer.login}</span>
+            <span class="reviewer-name">{reviewer.login}</span>
             <Tag shade={display.shade} icon={display.icon}>{display.text}</Tag>
           </div>
         {/each}
       {:else}
-        <div style="font-size:13px;color:#6b748c">None assigned</div>
+        <div class="empty-curtain">None assigned</div>
       {/if}
     </CurtainBox>
 
@@ -303,15 +316,15 @@
     <CurtainBox title="Herald">
       {#if heraldMatches.length > 0}
         {#each heraldMatches as match}
-          <div style="font-size:12px;margin-bottom:6px">
-            <span class="phui-icon-view phui-font-fa fa-check mrs" style="color:#139543"></span>
+          <div class="herald-match">
+            <i class="fa fa-check mrs herald-check"></i>
             <a href="/herald/{match.ruleId}"><strong>{match.ruleName}</strong></a>
             {#if match.actions?.length}
-              <div style="font-size:11px;color:#6b748c;margin-left:20px">
+              <div class="herald-actions">
                 {#each match.actions as action}
                   <div>
-                    <span class="phui-icon-view phui-font-fa {action.type === 'add_reviewer' ? 'fa-user-plus' : action.type === 'add_label' ? 'fa-tag' : action.type === 'post_comment' ? 'fa-comment' : 'fa-bolt'} mrs"></span>
-                    {action.type === 'add_reviewer' ? 'Add reviewer' : action.type === 'add_label' ? 'Add label' : action.type === 'post_comment' ? 'Post comment' : action.type}: {action.value}
+                    <i class="fa {heraldActionIcon(action.type)} mrs"></i>
+                    {heraldActionLabel(action.type)}: {action.value}
                   </div>
                 {/each}
               </div>
@@ -319,10 +332,10 @@
           </div>
         {/each}
       {:else}
-        <div style="font-size:12px;color:#6b748c">No rules matched.</div>
+        <div class="empty-curtain">No rules matched.</div>
       {/if}
-      <div style="margin-top:8px;font-size:12px">
-        <a href="/herald"><span class="phui-icon-view phui-font-fa fa-list mrs"></span>Manage Rules</a>
+      <div class="herald-manage">
+        <a href="/herald"><i class="fa fa-list mrs"></i>Manage Rules</a>
       </div>
     </CurtainBox>
 
@@ -338,10 +351,10 @@
 
     <!-- Actions -->
     {#if !pr.merged}
-      <div class="mood-curtain-actions">
+      <div class="curtain-actions">
         {#if pr.state !== 'closed'}
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-            <select bind:value={mergeMethod} style="font-size:12px;padding:4px 6px;border:1px solid #c7ccd9;border-radius:3px;background:#fff;flex:1">
+          <div class="merge-row">
+            <select bind:value={mergeMethod} class="merge-select">
               <option value="squash">Squash</option>
               <option value="merge">Merge</option>
               <option value="rebase">Rebase</option>
@@ -362,3 +375,103 @@
     {/if}
   {/snippet}
 </FormationView>
+
+<style>
+  .pr-page-header {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  .pr-title-row {
+    padding: 8px 0 12px;
+  }
+
+  .pr-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .pr-number {
+    color: var(--text-muted);
+    font-weight: normal;
+  }
+
+  .summary-body {
+    padding: 10px 12px;
+  }
+
+  .remarkup-content {
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .reviewer-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .reviewer-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 3px;
+  }
+
+  .reviewer-name {
+    font-size: 13px;
+  }
+
+  .empty-curtain {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .herald-match {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .herald-check {
+    color: var(--green);
+  }
+
+  .herald-actions {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 20px;
+  }
+
+  .herald-manage {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+
+  .curtain-actions {
+    padding: 12px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .merge-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .merge-select {
+    font-size: 12px;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--bg-card);
+    color: var(--text);
+    flex: 1;
+  }
+</style>

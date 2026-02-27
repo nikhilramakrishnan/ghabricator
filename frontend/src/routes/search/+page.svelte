@@ -73,32 +73,31 @@
   {/snippet}
 
   <Box border>
-    <div style="padding:16px">
+    <div class="search-bar">
       <form onsubmit={handleSubmit}>
-        <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div class="search-row">
           <input
             type="text"
             bind:value={query}
             placeholder="Search..."
-            class="aphront-form-input"
-            style="flex:1;padding:8px 12px;border:1px solid #c7ccd9;border-radius:3px;font-size:14px"
+            class="search-input"
           />
-          <button type="submit" class="mood-btn mood-btn-green" disabled={loading}>
-            <span class="phui-icon-view phui-font-fa fa-search mrs"></span>
+          <button type="submit" class="search-btn" disabled={loading}>
+            <i class="fa fa-search mrs"></i>
             Search
           </button>
         </div>
       </form>
 
-      <div style="display:flex;gap:4px">
+      <div class="type-tabs">
         {#each searchTypes as st}
           <button
             type="button"
-            class="mood-btn {searchType === st.value ? 'mood-btn-blue' : 'mood-btn-default'}"
-            style="font-size:12px;padding:4px 12px"
+            class="type-tab"
+            class:active={searchType === st.value}
             onclick={() => selectType(st.value)}
           >
-            <span class="phui-icon-view phui-font-fa {st.icon} mrs"></span>
+            <i class="fa {st.icon} mrs"></i>
             {st.label}
           </button>
         {/each}
@@ -107,8 +106,8 @@
   </Box>
 
   {#if loading}
-    <div style="padding:24px;text-align:center;color:#6b748c">
-      <span class="phui-icon-view phui-font-fa fa-spinner fa-spin" style="margin-right:8px"></span>
+    <div class="loading-state">
+      <i class="fa fa-spinner fa-spin mrs"></i>
       Searching...
     </div>
   {:else if searched && results}
@@ -145,15 +144,15 @@
       {:else}
         {#each results.code as result}
           <Box border>
-            <div style="padding:12px 16px">
-              <div style="font-size:13px;margin-bottom:6px">
-                <span class="phui-icon-view phui-font-fa fa-github mrs" style="color:#6b748c"></span>
+            <div class="code-result">
+              <div class="code-result-header">
+                <i class="fa fa-github mrs code-icon"></i>
                 <strong>{result.repo}</strong>
-                <span style="color:#6b748c;margin:0 4px">/</span>
-                <span style="color:#136CB2">{result.path}</span>
+                <span class="code-sep">/</span>
+                <span class="code-path">{result.path}</span>
               </div>
-              <div class="phabricator-source-code-container" style="max-height:200px;overflow:auto">
-                <pre class="PhabricatorMonospaced" style="margin:0;padding:8px;background:#f7f7f7;border-radius:3px;font-size:12px;overflow-x:auto">{@html result.fragment}</pre>
+              <div class="code-fragment-container">
+                <pre class="code-fragment">{@html result.fragment}</pre>
               </div>
             </div>
           </Box>
@@ -179,7 +178,7 @@
                 {/if}
                 {#if repo.language}
                   <Attribute>
-                    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{langColors[repo.language] ?? '#6b748c'};margin-right:4px;vertical-align:middle"></span>
+                    <span class="lang-dot" style="background:{langColors[repo.language] ?? 'var(--text-muted)'}"></span>
                     {repo.language}
                   </Attribute>
                 {/if}
@@ -194,3 +193,127 @@
     <InfoView icon="fa-inbox">No results found.</InfoView>
   {/if}
 </PageShell>
+
+<style>
+  .search-bar {
+    padding: 16px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .search-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg-card);
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: var(--blue);
+  }
+
+  .search-btn {
+    padding: 8px 16px;
+    background: var(--green);
+    color: var(--text-on-dark);
+    border: none;
+    border-radius: 3px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .search-btn:hover {
+    background: var(--green-hover);
+  }
+
+  .search-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .type-tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .type-tab {
+    font-size: 12px;
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--bg-card);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .type-tab:hover {
+    background: var(--bg-hover);
+  }
+
+  .type-tab.active {
+    background: var(--blue);
+    color: var(--text-on-dark);
+    border-color: var(--blue);
+  }
+
+  .loading-state {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .code-result {
+    padding: 12px 16px;
+  }
+
+  .code-result-header {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .code-icon {
+    color: var(--text-muted);
+  }
+
+  .code-path {
+    color: var(--text-link);
+  }
+
+  .code-sep {
+    color: var(--text-muted);
+    margin: 0 4px;
+  }
+
+  .code-fragment-container {
+    max-height: 200px;
+    overflow: auto;
+  }
+
+  .code-fragment {
+    margin: 0;
+    padding: 8px;
+    background: var(--bg-subtle);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    overflow-x: auto;
+  }
+
+  .lang-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+</style>

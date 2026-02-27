@@ -68,7 +68,7 @@
           {/if}
           {#if repo.language}
             <Attribute>
-              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{langColors[repo.language] ?? '#6b748c'};margin-right:4px;vertical-align:middle"></span>
+              <span class="lang-dot" style="background:{langColors[repo.language] ?? 'var(--text-muted)'}"></span>
               {repo.language}
             </Attribute>
           {/if}
@@ -80,3 +80,14 @@
     {/each}
   </ObjectItemList>
 </PageShell>
+
+<style>
+  .lang-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+</style>

@@ -10,7 +10,23 @@
   } = $props();
 </script>
 
-<div class="mood-curtain-box">
-  <div class="mood-curtain-title">{title}</div>
+<div class="curtain-box">
+  <div class="curtain-title">{title}</div>
   {@render children()}
 </div>
+
+<style>
+  .curtain-box {
+    margin-bottom: 16px;
+  }
+  .curtain-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+</style>

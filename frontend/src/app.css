@@ -1,105 +1,116 @@
-/* Ghabricator app overrides */
+/* ===== Design Tokens ===== */
+:root {
+  /* Page */
+  --bg-page: #f3f5f7;
+  --bg-card: #fff;
+  --bg-card-header: #f8f9fc;
+  --bg-hover: rgba(55, 55, 55, 0.04);
+  --bg-subtle: #f6f8fa;
+
+  /* Text */
+  --text: #464C5C;
+  --text-muted: #6b748c;
+  --text-link: #136CB2;
+  --text-on-dark: #fff;
+
+  /* Borders */
+  --border: #c7ccd9;
+  --border-subtle: #e3e4e8;
+
+  /* Semantic */
+  --green: #139543;
+  --green-hover: #117a38;
+  --red: #c0392b;
+  --red-hover: #a33025;
+  --blue: #136cb2;
+  --orange: #c69026;
+  --violet: #6e5494;
+  --yellow: #9a6700;
+
+  /* Tag shades — bg / text */
+  --tag-green-bg: #bef5cb; --tag-green-text: #1a7f37;
+  --tag-red-bg: #fdd; --tag-red-text: #b33225;
+  --tag-blue-bg: #ddf4ff; --tag-blue-text: #0969da;
+  --tag-orange-bg: #fff1e5; --tag-orange-text: #bc4c00;
+  --tag-yellow-bg: #fff8c5; --tag-yellow-text: #9a6700;
+  --tag-grey-bg: #eceef4; --tag-grey-text: #6b748c;
+  --tag-violet-bg: #eddeff; --tag-violet-text: #8250df;
+  --tag-indigo-bg: #e8def8; --tag-indigo-text: #6b479c;
+
+  /* Navbar */
+  --nav-bg: #292e36;
+
+  /* Typography */
+  --font-sans: 'Lato', 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+  --font-size: 13px;
+
+  /* Diff */
+  --diff-add-bg: rgba(151, 234, 151, 0.3);
+  --diff-del-bg: rgba(251, 175, 175, 0.3);
+  --diff-add-num-bg: rgba(151, 234, 151, 0.2);
+  --diff-del-num-bg: rgba(251, 175, 175, 0.2);
+}
+
+/* ===== Dark Mode ===== */
+body.dark {
+  --bg-page: #1B2028;
+  --bg-card: #242c38;
+  --bg-card-header: #1c2430;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-subtle: #1c2430;
+
+  --text: rgba(255, 255, 255, 0.9);
+  --text-muted: rgba(255, 255, 255, 0.55);
+  --text-link: #58a6ff;
+
+  --border: rgba(255, 255, 255, 0.12);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+
+  --tag-green-bg: rgba(35, 187, 91, 0.2); --tag-green-text: #4ade80;
+  --tag-red-bg: rgba(210, 84, 84, 0.2); --tag-red-text: #f87171;
+  --tag-blue-bg: rgba(52, 152, 219, 0.2); --tag-blue-text: #60a5fa;
+  --tag-orange-bg: rgba(230, 126, 34, 0.2); --tag-orange-text: #fb923c;
+  --tag-yellow-bg: rgba(241, 196, 15, 0.2); --tag-yellow-text: #fbbf24;
+  --tag-grey-bg: rgba(255, 255, 255, 0.08); --tag-grey-text: rgba(255, 255, 255, 0.7);
+  --tag-violet-bg: rgba(142, 68, 173, 0.2); --tag-violet-text: #c084fc;
+  --tag-indigo-bg: rgba(107, 71, 156, 0.2); --tag-indigo-text: #a78bfa;
+
+  --diff-add-bg: rgba(46, 160, 67, 0.2);
+  --diff-del-bg: rgba(248, 81, 73, 0.2);
+  --diff-add-num-bg: rgba(46, 160, 67, 0.1);
+  --diff-del-num-bg: rgba(248, 81, 73, 0.1);
+}
+
+/* ===== Global Reset ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  background: #f3f5f7;
+  background: var(--bg-page);
+  color: var(--text);
+  font: var(--font-size) var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ===== Navbar ===== */
-.phui-theme-blindigo .phabricator-main-menu-background { background: #292e36; }
-.device-desktop .phabricator-main-menu { height: 44px; padding-right: 0; }
-.phabricator-main-menu .phui-icon-view,
-.phabricator-main-menu .phui-font-fa { color: inherit; }
+a {
+  color: var(--text-link);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
 
-.phabricator-main-menu {
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 4px;
+/* FA icon utility — Phabricator's FA CSS uses .phui-font-fa, we use .fa */
+.fa {
+  display: inline-block;
+  font: normal normal normal 14px/1 FontAwesome;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-.phabricator-main-menu-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
-  margin-right: 16px;
-  text-decoration: none;
-  float: none;
-  height: auto;
-  padding: 0;
-}
-.phabricator-main-menu-brand:hover { background: none; }
-.phabricator-main-menu-brand .brand-icon {
-  font-size: 18px;
-  opacity: 0.8;
-}
-.phabricator-main-menu-href {
-  color: rgba(255,255,255,0.7);
-  font-size: 13px;
-  padding: 8px 12px;
-  text-decoration: none;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.phabricator-main-menu-href:hover { color: #fff; background: rgba(255,255,255,0.08); }
-.phabricator-main-menu-href.nav-active { color: #fff; background: rgba(255,255,255,0.12); }
-.phabricator-main-menu .nav-spacer { flex: 1; }
-.phabricator-core-user-menu {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: rgba(255,255,255,0.8);
-  font-size: 13px;
-  text-decoration: none;
-}
-.phabricator-core-user-menu img {
-  width: 28px;
-  height: 28px;
-  border-radius: 3px;
-}
-.phabricator-core-login-button {
-  margin-left: auto;
-  color: rgba(255,255,255,0.8);
-  font-size: 13px;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.phabricator-main-menu-alerts {
-  margin-left: 8px;
-  float: none;
-  display: flex;
-  align-items: center;
-  padding: 0;
-}
-.phabricator-main-menu-alerts .alert-notifications {
-  color: rgba(255,255,255,0.5);
-  font-size: 16px;
-  padding: 4px 8px;
-  cursor: pointer;
-  text-decoration: none;
-  background: none;
-  border: none;
-}
-.phabricator-main-menu-alerts .alert-notifications:hover { color: rgba(255,255,255,0.8); }
-
-/* ===== Density overrides ===== */
-.device-desktop .phui-two-column-content { padding: 0 16px; }
-.phui-two-column-view .phui-two-column-header { margin-bottom: 8px; }
-.phui-two-column-view .phui-two-column-header .phui-header-shell { padding: 12px 16px 8px; }
-.phui-two-column-header .phui-header-header { font-size: 18px; }
-.phui-two-column-view .phui-two-column-content .phui-object-box { margin: 0 0 12px 0; }
-.phui-object-box .phui-header-shell { padding: 8px 12px; border-bottom: 1px solid #e3e4e8; }
-.phui-two-column-content .phui-two-column-row { margin-top: 0; }
-.phui-side-column .phui-box { margin-bottom: 12px; }
-
-/* ===== Dark mode ===== */
-.phui-theme-dark .phui-comment-form-view { background: #1B2028; border-color: #464C5C; }
-.phui-theme-dark .phui-comment-action-bar { border-color: #464C5C; }
-.phui-theme-dark .phui-comment-submit-control { border-color: #464C5C; }
-.phui-theme-dark .remarkup-assist-textarea { background: #13171D; color: #C8D1DB; border-color: #464C5C; }
-.phui-theme-dark .aphront-form-input select { background: #1B2028; color: #C8D1DB; border-color: #464C5C; }
+.mrs { margin-right: 6px; }

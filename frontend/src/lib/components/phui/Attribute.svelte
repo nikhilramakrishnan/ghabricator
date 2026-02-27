@@ -10,9 +10,21 @@
   } = $props();
 </script>
 
-<li class="phui-oi-attribute">
+<span class="attr">
   {#if icon}
-    <span class="phui-icon-view phui-font-fa {icon} mrs"></span>
+    <i class="fa {icon} attr-icon mrs"></i>
   {/if}
   {@render children()}
-</li>
+</span>
+
+<style>
+  .attr {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .attr-icon {
+    color: var(--text-muted);
+  }
+</style>

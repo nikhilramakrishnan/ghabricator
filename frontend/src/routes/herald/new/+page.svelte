@@ -73,60 +73,60 @@
 
   <Box border>
     <form onsubmit={handleSubmit}>
-      <div class="phui-form-view" style="padding:16px">
-        <div class="aphront-form-control" style="margin-bottom:12px">
-          <label class="aphront-form-label" style="display:block;font-weight:bold;margin-bottom:4px;font-size:13px">Rule Name</label>
-          <input type="text" bind:value={name} required placeholder="e.g. Auto-add reviewers for docs changes" class="aphront-form-input" style="width:100%;max-width:460px;padding:6px 8px;border:1px solid #c7ccd9;border-radius:3px" />
+      <div class="form-body">
+        <div class="form-group">
+          <label class="form-label" for="rule-name">Rule Name</label>
+          <input id="rule-name" type="text" bind:value={name} required placeholder="e.g. Auto-add reviewers for docs changes" class="form-input" />
         </div>
 
-        <div class="aphront-form-control" style="margin-bottom:16px">
-          <label class="aphront-form-label" style="display:flex;align-items:center;gap:8px;font-weight:bold;font-size:13px;cursor:pointer">
+        <div class="form-group">
+          <label class="form-label checkbox-label">
             <input type="checkbox" bind:checked={mustMatchAll} />
             Must match all conditions
           </label>
         </div>
 
-        <div class="aphront-form-control" style="margin-bottom:16px">
-          <label class="aphront-form-label" style="display:block;font-weight:bold;margin-bottom:8px;font-size:13px">Conditions</label>
+        <div class="form-group">
+          <span class="form-label">Conditions</span>
           {#each conditions as cond, i}
-            <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center">
-              <select bind:value={cond.type} class="aphront-form-input" style="padding:6px 8px;border:1px solid #c7ccd9;border-radius:3px">
+            <div class="row-group">
+              <select bind:value={cond.type} class="form-input form-select">
                 {#each conditionTypes as ct}
                   <option value={ct.value}>{ct.label}</option>
                 {/each}
               </select>
-              <input type="text" bind:value={cond.value} placeholder="Value" class="aphront-form-input" style="flex:1;padding:6px 8px;border:1px solid #c7ccd9;border-radius:3px" />
+              <input type="text" bind:value={cond.value} placeholder="Value" class="form-input row-input" />
               {#if conditions.length > 1}
-                <button type="button" class="mood-btn mood-btn-default" style="padding:4px 8px;font-size:12px" onclick={() => removeCondition(i)}>
-                  <span class="phui-icon-view phui-font-fa fa-times"></span>
+                <button type="button" class="btn-icon" title="Remove" onclick={() => removeCondition(i)}>
+                  <i class="fa fa-times"></i>
                 </button>
               {/if}
             </div>
           {/each}
-          <button type="button" class="mood-btn mood-btn-default" style="margin-top:4px;font-size:12px" onclick={addCondition}>
-            <span class="phui-icon-view phui-font-fa fa-plus mrs"></span>Add Condition
+          <button type="button" class="btn-secondary" onclick={addCondition}>
+            <i class="fa fa-plus mrs"></i>Add Condition
           </button>
         </div>
 
-        <div class="aphront-form-control" style="margin-bottom:16px">
-          <label class="aphront-form-label" style="display:block;font-weight:bold;margin-bottom:8px;font-size:13px">Actions</label>
+        <div class="form-group">
+          <span class="form-label">Actions</span>
           {#each actions as act, i}
-            <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center">
-              <select bind:value={act.type} class="aphront-form-input" style="padding:6px 8px;border:1px solid #c7ccd9;border-radius:3px">
+            <div class="row-group">
+              <select bind:value={act.type} class="form-input form-select">
                 {#each actionTypes as at}
                   <option value={at.value}>{at.label}</option>
                 {/each}
               </select>
-              <input type="text" bind:value={act.value} placeholder="Value" class="aphront-form-input" style="flex:1;padding:6px 8px;border:1px solid #c7ccd9;border-radius:3px" />
+              <input type="text" bind:value={act.value} placeholder="Value" class="form-input row-input" />
               {#if actions.length > 1}
-                <button type="button" class="mood-btn mood-btn-default" style="padding:4px 8px;font-size:12px" onclick={() => removeAction(i)}>
-                  <span class="phui-icon-view phui-font-fa fa-times"></span>
+                <button type="button" class="btn-icon" title="Remove" onclick={() => removeAction(i)}>
+                  <i class="fa fa-times"></i>
                 </button>
               {/if}
             </div>
           {/each}
-          <button type="button" class="mood-btn mood-btn-default" style="margin-top:4px;font-size:12px" onclick={addAction}>
-            <span class="phui-icon-view phui-font-fa fa-plus mrs"></span>Add Action
+          <button type="button" class="btn-secondary" onclick={addAction}>
+            <i class="fa fa-plus mrs"></i>Add Action
           </button>
         </div>
 
@@ -137,3 +137,92 @@
     </form>
   </Box>
 </PageShell>
+
+<style>
+  .form-body {
+    padding: 16px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group:nth-child(1),
+  .form-group:nth-child(2) {
+    margin-bottom: 12px;
+  }
+
+  .form-label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .form-input {
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg-card);
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--blue);
+  }
+
+  input.form-input:not(.row-input) {
+    width: 100%;
+    max-width: 460px;
+  }
+
+  .row-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: center;
+  }
+
+  .row-input {
+    flex: 1;
+  }
+
+  .btn-icon {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .btn-icon:hover {
+    background: var(--bg-hover);
+  }
+
+  .btn-secondary {
+    margin-top: 4px;
+    font-size: 12px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--bg-card);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-hover);
+  }
+</style>

@@ -10,13 +10,9 @@
 
   onMount(() => {
     checkAuth();
-
-    // Manage body classes reactively
     const unsubTheme = theme.subscribe((t) => {
-      document.body.classList.add('device-desktop', 'phui-theme-blindigo');
-      document.body.classList.toggle('phui-theme-dark', t === 'dark');
+      document.body.classList.toggle('dark', t === 'dark');
     });
-
     return unsubTheme;
   });
 

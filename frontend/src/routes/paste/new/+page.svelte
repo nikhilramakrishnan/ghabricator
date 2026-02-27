@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Breadcrumbs, PageShell } from '$lib/components/layout';
-  import { Button } from '$lib/components/phui';
+  import { Button, Box } from '$lib/components/phui';
   import { apiPost } from '$lib/api';
   import { goto } from '$app/navigation';
   import type { APIPasteCreateResponse } from '$lib/types';
@@ -65,38 +65,38 @@
     <Breadcrumbs {crumbs} />
   {/snippet}
 
-  <div class="phui-box phui-box-border phui-object-box">
+  <Box border>
     <form onsubmit={handleSubmit}>
-      <div class="phui-form-view" style="padding:16px">
-        <div class="aphront-form-control" style="margin-bottom:12px">
-          <label class="aphront-form-label" style="display:block;font-weight:bold;margin-bottom:4px;font-size:13px">Title</label>
-          <input type="text" bind:value={title} placeholder="Paste title" class="aphront-form-input" style="width:100%;max-width:460px;padding:6px 8px;border:1px solid #c7ccd9;border-radius:3px" />
+      <div class="form-body">
+        <div class="form-group">
+          <label class="form-label" for="paste-title">Title</label>
+          <input id="paste-title" type="text" bind:value={title} placeholder="Paste title" class="form-input" />
         </div>
 
-        <div class="aphront-form-control" style="margin-bottom:12px">
-          <label class="aphront-form-label" style="display:block;font-weight:bold;margin-bottom:4px;font-size:13px">Language</label>
-          <select bind:value={language} class="aphront-form-input" style="padding:6px 8px;border:1px solid #c7ccd9;border-radius:3px">
+        <div class="form-group">
+          <label class="form-label" for="paste-lang">Language</label>
+          <select id="paste-lang" bind:value={language} class="form-input form-select">
             {#each languages as lang}
               <option value={lang.ext}>{lang.name}</option>
             {/each}
           </select>
         </div>
 
-        <div class="aphront-form-control" style="margin-bottom:12px">
-          <label class="aphront-form-label" style="display:block;font-weight:bold;margin-bottom:4px;font-size:13px">Content</label>
+        <div class="form-group">
+          <label class="form-label" for="paste-content">Content</label>
           <textarea
+            id="paste-content"
             bind:value={content}
             rows="20"
             required
             placeholder="Paste content here..."
-            class="PhabricatorMonospaced aphront-textarea-very-tall"
-            style="width:100%;padding:8px;border:1px solid #c7ccd9;border-radius:3px;font-family:monospace;font-size:12px;resize:vertical"
+            class="form-input form-textarea"
           ></textarea>
         </div>
 
-        <div class="aphront-form-control" style="margin-bottom:16px">
-          <label class="aphront-form-label" style="display:block;font-weight:bold;margin-bottom:4px;font-size:13px">Visibility</label>
-          <select bind:value={visibility} class="aphront-form-input" style="padding:6px 8px;border:1px solid #c7ccd9;border-radius:3px">
+        <div class="form-group">
+          <label class="form-label" for="paste-vis">Visibility</label>
+          <select id="paste-vis" bind:value={visibility} class="form-input form-select">
             <option value="secret">Secret</option>
             <option value="public">Public</option>
           </select>
@@ -107,5 +107,50 @@
         </Button>
       </div>
     </form>
-  </div>
+  </Box>
 </PageShell>
+
+<style>
+  .form-body {
+    padding: 16px;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .form-input {
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg-card);
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--blue);
+  }
+
+  input.form-input {
+    width: 100%;
+    max-width: 460px;
+  }
+
+  .form-textarea {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    resize: vertical;
+    padding: 8px;
+  }
+</style>

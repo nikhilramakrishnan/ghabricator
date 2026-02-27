@@ -91,10 +91,8 @@
   }
 </script>
 
-<div class="changeset-view-content">
-  <table
-    class="differential-diff remarkup-code PhabricatorMonospaced diff-2up"
-  >
+<div class="diff-wrap">
+  <table class="diff-table">
     <colgroup>
       <col class="num" style="width:4em" />
       <col class="left" />
@@ -187,14 +185,14 @@
 </div>
 
 <style>
-  .changeset-view-content {
+  .diff-wrap {
     overflow-x: auto;
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     line-height: 1.5;
     table-layout: fixed;
@@ -209,7 +207,7 @@
   }
 
   td.n {
-    color: #6b748c;
+    color: var(--text-muted);
     text-align: right;
     user-select: none;
     vertical-align: top;
@@ -221,7 +219,7 @@
     padding: 0;
   }
 
-  /* Line number buttons — invisible until hover */
+  /* Line number buttons -- invisible until hover */
   .line-btn {
     all: unset;
     cursor: pointer;
@@ -231,34 +229,34 @@
     text-align: right;
   }
   .line-btn:hover {
-    color: #136cb2;
+    color: var(--text-link);
     text-decoration: underline;
   }
 
   /* Change highlighting */
   :global(td.old),
   :global(td.old-full) {
-    background: rgba(251, 175, 175, 0.3);
+    background: var(--diff-del-bg);
   }
   :global(td.new),
   :global(td.new-full) {
-    background: rgba(151, 234, 151, 0.3);
+    background: var(--diff-add-bg);
   }
   :global(td.old.n),
   :global(td.old-full.n) {
-    background: rgba(251, 175, 175, 0.2);
+    background: var(--diff-del-num-bg);
   }
   :global(td.new.n),
   :global(td.new-full.n) {
-    background: rgba(151, 234, 151, 0.2);
+    background: var(--diff-add-num-bg);
   }
 
   /* Show more row */
   :global(tr.show-more td) {
     text-align: center;
     padding: 6px;
-    background: rgba(55, 55, 55, 0.04);
-    color: #6b748c;
+    background: var(--bg-hover);
+    color: var(--text-muted);
     font-size: 12px;
     cursor: pointer;
   }

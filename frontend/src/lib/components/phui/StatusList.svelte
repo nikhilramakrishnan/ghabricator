@@ -9,20 +9,57 @@
   let { items }: { items: StatusItem[] } = $props();
 </script>
 
-<div>
+<div class="status-list">
   {#each items as item}
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px">
-      <span class="phui-icon-view phui-font-fa {item.icon}" style="color:{item.color};width:16px;text-align:center"></span>
+    <div class="status-item">
+      <i class="fa {item.icon} status-icon" style="color:{item.color}"></i>
       {#if item.href}
         <a
           href={item.href}
           target="_blank"
           rel="noopener"
-          style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none;color:inherit"
+          class="status-link"
         >{item.name}</a>
       {:else}
-        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{item.name}</span>
+        <span class="status-text">{item.name}</span>
       {/if}
     </div>
   {/each}
 </div>
+
+<style>
+  .status-list {
+    padding: 0;
+  }
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .status-icon {
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .status-link {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-decoration: none;
+    color: inherit;
+  }
+  .status-link:hover {
+    text-decoration: underline;
+  }
+  .status-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>

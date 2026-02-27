@@ -48,10 +48,10 @@
     onkeydown={(e) => e.key === 'Enter' && expand()}
   >
     {#if loading}
-      <span class="phui-icon-view phui-font-fa fa-spinner fa-spin mrs"></span>
+      <i class="fa fa-spinner fa-spin mrs"></i>
       Loading...
     {:else}
-      <span class="phui-icon-view phui-font-fa fa-ellipsis-h mrs"></span>
+      <i class="fa fa-ellipsis-h mrs"></i>
       Show {end - start + 1} more lines
     {/if}
   </td>
@@ -61,25 +61,16 @@
   tr.show-more td {
     text-align: center;
     padding: 6px;
-    background: rgba(55, 55, 55, 0.04);
-    color: #6b748c;
+    background: var(--bg-hover);
+    color: var(--text-muted);
     font-size: 12px;
     cursor: pointer;
   }
   tr.show-more td:hover {
-    background: rgba(55, 55, 55, 0.08);
+    background: var(--bg-subtle);
   }
 
   th.num {
     width: 4em;
-  }
-
-  /* Dark mode */
-  :global(.phui-theme-dark) tr.show-more td {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.3);
-  }
-  :global(.phui-theme-dark) tr.show-more td:hover {
-    background: rgba(255, 255, 255, 0.08);
   }
 </style>

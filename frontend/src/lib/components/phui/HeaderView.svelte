@@ -8,13 +8,32 @@
   } = $props();
 </script>
 
-<div class="phui-header-shell">
-  <div class="phui-header-view">
-    <h1 class="phui-header-header">
-      {#if icon}
-        <span class="phui-header-icon phui-icon-view phui-font-fa {icon}"></span>
-      {/if}
-      {title}
-    </h1>
-  </div>
+<div class="header">
+  <h1 class="header-title">
+    {#if icon}
+      <i class="fa {icon} header-icon"></i>
+    {/if}
+    {title}
+  </h1>
 </div>
+
+<style>
+  .header {
+    background: var(--bg-card-header);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .header-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-icon {
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+</style>

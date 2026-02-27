@@ -9,11 +9,11 @@
   let { items }: { items: PropertyItem[] } = $props();
 </script>
 
-<div class="mood-curtain-box">
+<div class="prop-list">
   {#each items as item}
-    <div class="mood-curtain-prop">
-      <span class="mood-curtain-key">{item.label}</span>
-      <span class="mood-curtain-val">
+    <div class="prop-row">
+      <span class="prop-key">{item.label}</span>
+      <span class="prop-val">
         {#if typeof item.value === 'string'}
           {item.value}
         {:else}
@@ -23,3 +23,24 @@
     </div>
   {/each}
 </div>
+
+<style>
+  .prop-list {
+    padding: 0;
+  }
+  .prop-row {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+  }
+  .prop-key {
+    font-size: 12px;
+    color: var(--text-muted);
+    width: 80px;
+    flex-shrink: 0;
+  }
+  .prop-val {
+    font-size: 13px;
+    color: var(--text);
+  }
+</style>

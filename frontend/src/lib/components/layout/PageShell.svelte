@@ -16,30 +16,56 @@
   } = $props();
 </script>
 
-<div class="phui-two-column-view">
-  <div class="phui-two-column-container">
-    {#if breadcrumbs}
-      {@render breadcrumbs()}
-    {/if}
-    {#if title}
-      <div class="phui-two-column-header">
-        <div class="phui-header-view">
-          <div class="phui-header-shell" style="display:flex;align-items:center;justify-content:space-between;">
-            <h1 class="phui-header-header">
-              {#if icon}
-                <span class="phui-header-icon phui-icon-view phui-font-fa {icon}"></span>
-              {/if}
-              {title}
-            </h1>
-            {#if headerRight}
-              {@render headerRight()}
-            {/if}
-          </div>
+<div class="page-shell">
+  {#if breadcrumbs}
+    {@render breadcrumbs()}
+  {/if}
+  {#if title}
+    <div class="page-header">
+      <h1 class="page-title">
+        {#if icon}
+          <i class="fa {icon} title-icon"></i>
+        {/if}
+        {title}
+      </h1>
+      {#if headerRight}
+        <div class="header-right">
+          {@render headerRight()}
         </div>
-      </div>
-    {/if}
-    <div class="phui-two-column-content">
-      {@render children()}
+      {/if}
     </div>
+  {/if}
+  <div class="page-content">
+    {@render children()}
   </div>
 </div>
+
+<style>
+  .page-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0 12px;
+  }
+  .page-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .title-icon {
+    color: var(--text-muted);
+    font-size: 16px;
+  }
+  .page-content {
+    min-height: 0;
+  }
+</style>

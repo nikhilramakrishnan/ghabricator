@@ -26,15 +26,15 @@
   }
 
   function statusColor(cs: APIChangeset): string {
-    if (cs.isNew) return '#2EA86B';
-    if (cs.isDeleted) return '#C0392B';
-    return '#E8A83E';
+    if (cs.isNew) return 'var(--green)';
+    if (cs.isDeleted) return 'var(--red)';
+    return 'var(--orange)';
   }
 </script>
 
-<div class="diff-tree-view">
+<div class="file-tree">
   {#if changesets.length > 5}
-    <div class="diff-tree-filter">
+    <div class="filter-box">
       <input
         type="text"
         placeholder="Filter files..."
@@ -46,11 +46,11 @@
   {#each filtered as cs}
     {@const { dir, file } = splitPath(cs.displayPath)}
     <div
-      class="diff-tree-path diff-tree-path-changeset"
+      class="tree-item"
       class:active={cs.displayPath === activeFile}
     >
-      <div class="diff-tree-path-indent">
-        <div class="diff-tree-path-name">
+      <div class="tree-row">
+        <div class="tree-name">
           <a href="#C{cs.id}">
             <span class="status-dot" style="color:{statusColor(cs)}">&#x25CF;</span>
             {#if dir}
@@ -60,7 +60,7 @@
           </a>
         </div>
         {#if cs.linesAdded > 0 || cs.linesRemoved > 0}
-          <div class="diff-tree-path-inlines">
+          <div class="tree-stats">
             {#if cs.linesAdded > 0}
               <span class="stat-add">+{cs.linesAdded}</span>
             {/if}
@@ -75,45 +75,47 @@
 </div>
 
 <style>
-  .diff-tree-view {
+  .file-tree {
     font-size: 12px;
   }
 
-  .diff-tree-filter {
+  .filter-box {
     padding: 8px;
   }
 
-  .diff-tree-filter input {
+  .filter-box input {
     width: 100%;
     padding: 4px 8px;
-    border: 1px solid #c7ccd9;
+    border: 1px solid var(--border);
     border-radius: 3px;
     font-size: 12px;
     outline: none;
     box-sizing: border-box;
+    background: var(--bg-card);
+    color: var(--text);
   }
-  .diff-tree-filter input:focus {
-    border-color: #136cb2;
+  .filter-box input:focus {
+    border-color: var(--text-link);
   }
 
-  .diff-tree-path {
+  .tree-item {
     padding: 4px 8px;
     cursor: pointer;
   }
-  .diff-tree-path:hover {
-    background: rgba(55, 55, 55, 0.04);
+  .tree-item:hover {
+    background: var(--bg-hover);
   }
-  .diff-tree-path.active {
+  .tree-item.active {
     background: rgba(19, 108, 178, 0.08);
   }
 
-  .diff-tree-path-indent {
+  .tree-row {
     display: flex;
     align-items: center;
     gap: 4px;
   }
 
-  .diff-tree-path-name {
+  .tree-name {
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -121,9 +123,9 @@
     white-space: nowrap;
   }
 
-  .diff-tree-path-name a {
+  .tree-name a {
     text-decoration: none;
-    color: inherit;
+    color: var(--text);
   }
 
   .status-dot {
@@ -134,14 +136,14 @@
     opacity: 0.65;
   }
 
-  .diff-tree-path-inlines {
+  .tree-stats {
     display: flex;
     gap: 4px;
     flex-shrink: 0;
   }
 
   .stat-add {
-    color: #2ea86b;
+    color: var(--green);
     background: rgba(46, 168, 107, 0.1);
     padding: 0 4px;
     border-radius: 2px;
@@ -149,26 +151,10 @@
   }
 
   .stat-del {
-    color: #c0392b;
+    color: var(--red);
     background: rgba(192, 57, 43, 0.1);
     padding: 0 4px;
     border-radius: 2px;
     font-size: 11px;
-  }
-
-  /* Dark mode */
-  :global(.phui-theme-dark) .diff-tree-filter input {
-    background: #1b2028;
-    color: #c8d1db;
-    border-color: #464c5c;
-  }
-  :global(.phui-theme-dark) .diff-tree-path:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-  :global(.phui-theme-dark) .diff-tree-path.active {
-    background: rgba(255, 255, 255, 0.1);
-  }
-  :global(.phui-theme-dark) .diff-tree-path-name a {
-    color: #c8d1db;
   }
 </style>
