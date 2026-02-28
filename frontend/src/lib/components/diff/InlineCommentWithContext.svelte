@@ -30,6 +30,20 @@
   function isTarget(row: APIDiffRow): boolean {
     return lineNum(row) === comment.line;
   }
+
+  function isOld(row: APIDiffRow): boolean {
+    return lineClass(row).includes('old');
+  }
+
+  function isNew(row: APIDiffRow): boolean {
+    return lineClass(row).includes('new');
+  }
+
+  function changeMarker(row: APIDiffRow): string {
+    if (isOld(row)) return '\u2212';
+    if (isNew(row)) return '+';
+    return ' ';
+  }
 </script>
 
 <div class="icwc">
@@ -43,8 +57,9 @@
       {#each contextRows as row}
         {@const ln = lineNum(row)}
         {@const cls = lineClass(row)}
-        <div class="icwc-row" class:target={isTarget(row)} class:old={cls === 'old' || cls === 'old-full'} class:new={cls === 'new' || cls === 'new-full'}>
+        <div class="icwc-row" class:target={isTarget(row)} class:old={isOld(row)} class:new={isNew(row)}>
           <span class="icwc-ln">{ln > 0 ? ln : ''}</span>
+          <span class="icwc-marker" class:add={isNew(row)} class:del={isOld(row)}>{changeMarker(row)}</span>
           <span class="icwc-content">{@html lineContent(row)}</span>
         </div>
       {/each}
@@ -136,6 +151,21 @@
     color: var(--text-muted);
     user-select: none;
     flex-shrink: 0;
+  }
+  .icwc-marker {
+    width: 1.2em;
+    text-align: center;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    user-select: none;
+  }
+  .icwc-marker.add {
+    color: var(--green);
+    font-weight: 700;
+  }
+  .icwc-marker.del {
+    color: var(--red);
+    font-weight: 700;
   }
   .icwc-content {
     padding: 1px 8px;

@@ -215,3 +215,50 @@ a:hover {
 .remarkup-content input[type="checkbox"] {
   margin-right: 6px;
 }
+
+/* ===== Chroma Syntax Highlighting (github light) ===== */
+.k, .kc, .kd, .kn, .kp, .kr, .kt { color: #cf222e; }
+.na { color: #1f2328; }
+.nc { color: #1f2328; }
+.no, .nd { color: #0550ae; }
+.ni { color: #6639ba; }
+.nl { color: #990000; font-weight: bold; }
+.nn { color: #24292e; }
+.nt { color: #0550ae; }
+.nb { color: #6639ba; }
+.bp { color: #6a737d; }
+.nv, .vc, .vg, .vi, .vm { color: #953800; }
+.nf, .fm { color: #6639ba; }
+.s, .sa, .sb, .sc, .dl, .sd, .s2, .se, .sh, .si, .sx, .sr, .s1 { color: #0a3069; }
+.ss { color: #032f62; }
+.m, .mb, .mf, .mh, .mi, .il, .mo { color: #0550ae; }
+.o, .ow { color: #0550ae; }
+.p { color: #1f2328; }
+.c, .ch, .cm, .c1 { color: #57606a; font-style: italic; }
+.cs, .cp, .cpf { color: #57606a; font-style: italic; }
+.err { color: #f85149; }
+
+/* ===== Chroma Syntax Highlighting (github dark) ===== */
+body.dark .k, body.dark .kd, body.dark .kn, body.dark .kr, body.dark .kt { color: #ff7b72; }
+body.dark .kc, body.dark .kp { color: #79c0ff; }
+body.dark .nc { color: #f0883e; font-weight: bold; }
+body.dark .no { color: #79c0ff; font-weight: bold; }
+body.dark .nd { color: #d2a8ff; font-weight: bold; }
+body.dark .ni { color: #ffa657; }
+body.dark .ne { color: #f0883e; font-weight: bold; }
+body.dark .nl { color: #79c0ff; font-weight: bold; }
+body.dark .nn { color: #ff7b72; }
+body.dark .nt { color: #7ee787; }
+body.dark .nv, body.dark .vc, body.dark .vg, body.dark .vi, body.dark .vm { color: #79c0ff; }
+body.dark .nf, body.dark .fm { color: #d2a8ff; font-weight: bold; }
+body.dark .nb { color: #6639ba; }
+body.dark .bp { color: #8b949e; }
+body.dark .s, body.dark .sb, body.dark .sc, body.dark .sd, body.dark .s2, body.dark .si, body.dark .sx, body.dark .s1 { color: #a5d6ff; }
+body.dark .sa, body.dark .dl, body.dark .se, body.dark .sh, body.dark .sr { color: #79c0ff; }
+body.dark .ss { color: #a5d6ff; }
+body.dark .m, body.dark .mb, body.dark .mf, body.dark .mh, body.dark .mi, body.dark .il, body.dark .mo { color: #a5d6ff; }
+body.dark .o, body.dark .ow { color: #ff7b72; font-weight: bold; }
+body.dark .p { color: inherit; }
+body.dark .c, body.dark .ch, body.dark .cm, body.dark .c1 { color: #8b949e; font-style: italic; }
+body.dark .cs, body.dark .cp, body.dark .cpf { color: #8b949e; font-style: italic; }
+body.dark .err { color: #f85149; }

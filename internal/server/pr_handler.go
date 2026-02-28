@@ -235,7 +235,7 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 			apiCmts = append(apiCmts, APIReviewComment{
 				ID:        c.ID,
 				Author:    APIUser{Login: c.Author.Login, AvatarURL: c.Author.AvatarURL},
-				Body:      c.Body,
+				Body:      remarkup.Render(c.Body),
 				Path:      c.Path,
 				Line:      c.Line,
 				Side:      c.Side,
@@ -290,7 +290,7 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 		apiTimeline = append(apiTimeline, APITimelineEvent{
 			Author:    APIUser{Login: ev.Author.Login, AvatarURL: ev.Author.AvatarURL},
 			Action:    ev.Action,
-			Body:      ev.Body,
+			Body:      remarkup.Render(ev.Body),
 			CreatedAt: ev.CreatedAt,
 			IconClass: ev.IconClass,
 			IconColor: ev.IconColor,
