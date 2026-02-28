@@ -80,6 +80,11 @@ export interface APIChangeset {
   rows: APIDiffRow[];
 }
 
+export interface APIReaction {
+  emoji: string;
+  count: number;
+}
+
 export interface APIReviewComment {
   id: number;
   author: APIUser;
@@ -89,6 +94,7 @@ export interface APIReviewComment {
   side: string;
   createdAt: string;
   inReplyTo?: number;
+  reactions?: APIReaction[];
 }
 
 export interface APIReview {

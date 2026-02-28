@@ -205,6 +205,18 @@ func FetchReviewComments(ctx context.Context, client *gh.Client, owner, repo str
 			if c.InReplyTo != nil {
 				rc.InReplyTo = c.GetInReplyTo()
 			}
+			if c.Reactions != nil {
+				rc.Reactions = &ReactionSummary{
+					PlusOne:  c.Reactions.GetPlusOne(),
+					MinusOne: c.Reactions.GetMinusOne(),
+					Laugh:    c.Reactions.GetLaugh(),
+					Confused: c.Reactions.GetConfused(),
+					Heart:    c.Reactions.GetHeart(),
+					Hooray:   c.Reactions.GetHooray(),
+					Rocket:   c.Reactions.GetRocket(),
+					Eyes:     c.Reactions.GetEyes(),
+				}
+			}
 			result = append(result, rc)
 		}
 		if resp.NextPage == 0 {
@@ -269,6 +281,37 @@ func CreateReviewComment(ctx context.Context, client *gh.Client, owner, repo str
 		CreatedAt: created.GetCreatedAt().Time,
 		UpdatedAt: created.GetUpdatedAt().Time,
 	}, nil
+}
+
+// CreateReplyComment creates an inline comment as a reply to an existing comment.
+func CreateReplyComment(ctx context.Context, client *gh.Client, owner, repo string, number int, body string, inReplyTo int64) (*ReviewComment, error) {
+	created, _, err := client.PullRequests.CreateCommentInReplyTo(ctx, owner, repo, number, body, inReplyTo)
+	if err != nil {
+		return nil, fmt.Errorf("create reply comment: %w", err)
+	}
+	return &ReviewComment{
+		ID:   created.GetID(),
+		Body: created.GetBody(),
+		Path: created.GetPath(),
+		Line: created.GetLine(),
+		Side: created.GetSide(),
+		Author: User{
+			Login:     created.GetUser().GetLogin(),
+			AvatarURL: created.GetUser().GetAvatarURL(),
+		},
+		InReplyTo: created.GetInReplyTo(),
+		CreatedAt: created.GetCreatedAt().Time,
+		UpdatedAt: created.GetUpdatedAt().Time,
+	}, nil
+}
+
+// AddCommentReaction adds a reaction to a pull request review comment.
+func AddCommentReaction(ctx context.Context, client *gh.Client, owner, repo string, commentID int64, content string) error {
+	_, _, err := client.Reactions.CreatePullRequestCommentReaction(ctx, owner, repo, commentID, content)
+	if err != nil {
+		return fmt.Errorf("add comment reaction: %w", err)
+	}
+	return nil
 }
 
 // UpdateReviewComment updates an existing inline review comment.

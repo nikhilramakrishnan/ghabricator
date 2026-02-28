@@ -102,14 +102,20 @@ type APIDiffRow struct {
 }
 
 type APIReviewComment struct {
-	ID        int64     `json:"id"`
-	Author    APIUser   `json:"author"`
-	Body      string    `json:"body"`
-	Path      string    `json:"path"`
-	Line      int       `json:"line"`
-	Side      string    `json:"side"`
-	CreatedAt time.Time `json:"createdAt"`
-	InReplyTo int64     `json:"inReplyTo,omitempty"`
+	ID        int64              `json:"id"`
+	Author    APIUser            `json:"author"`
+	Body      string             `json:"body"`
+	Path      string             `json:"path"`
+	Line      int                `json:"line"`
+	Side      string             `json:"side"`
+	CreatedAt time.Time          `json:"createdAt"`
+	InReplyTo int64              `json:"inReplyTo,omitempty"`
+	Reactions []APIReaction `json:"reactions,omitempty"`
+}
+
+type APIReaction struct {
+	Emoji string `json:"emoji"`
+	Count int    `json:"count"`
 }
 
 type APIReview struct {
@@ -169,6 +175,7 @@ type APIInlineRequest struct {
 	Side      string `json:"side"` // LEFT or RIGHT
 	Body      string `json:"body"`
 	CommentID int64  `json:"commentID"`
+	InReplyTo int64  `json:"inReplyTo,omitempty"`
 }
 
 type APIInlineComment struct {
@@ -202,6 +209,15 @@ type APICloseRequest struct {
 	Repo   string `json:"repo"`
 	Number int    `json:"number"`
 	State  string `json:"state"` // closed, open
+}
+
+// --- Reaction API types ---
+
+type APIReactionRequest struct {
+	Owner     string `json:"owner"`
+	Repo      string `json:"repo"`
+	CommentID int64  `json:"commentID"`
+	Content   string `json:"content"` // +1, -1, laugh, confused, heart, hooray, rocket, eyes
 }
 
 // --- Repos API types ---

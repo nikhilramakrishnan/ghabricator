@@ -114,7 +114,9 @@
       path: c.path,
       line: c.line,
       side: c.side,
-      createdAt: c.createdAt
+      createdAt: c.createdAt,
+      inReplyTo: c.inReplyTo,
+      reactions: c.reactions
     }));
   }
 
@@ -238,19 +240,53 @@
     return cs.rows.slice(Math.max(0, idx - 2), idx + 3);
   }
 
-  let commentStream: StreamItem[] = $derived.by(() => {
+  let _commentStreamData = $derived.by(() => {
     const items: StreamItem[] = [];
 
-    // Flatten all inline comments
-    for (const [, comments] of Object.entries(commentsByPath)) {
-      for (const c of comments) {
-        items.push({
-          type: 'inline',
-          comment: c,
-          contextRows: getContextRows(c),
-          createdAt: c.createdAt
-        });
+    // Build id lookup for all comments across all paths
+    const allComments: APIReviewComment[] = [];
+    for (const comments of Object.values(commentsByPath)) {
+      for (const c of comments) allComments.push(c);
+    }
+    const byId = new Map<number, APIReviewComment>();
+    for (const c of allComments) byId.set(c.id, c);
+
+    // Identify reply IDs so we can filter them from top-level
+    const replyIds = new Set<number>();
+    for (const c of allComments) {
+      if (c.inReplyTo && byId.has(c.inReplyTo)) {
+        replyIds.add(c.id);
       }
+    }
+
+    // Group replies by root
+    const repliesByRoot = new Map<number, APIReviewComment[]>();
+    for (const c of allComments) {
+      if (!replyIds.has(c.id)) continue;
+      // Walk up to find root
+      let rootId = c.inReplyTo!;
+      let parent = byId.get(rootId);
+      while (parent && parent.inReplyTo && byId.has(parent.inReplyTo)) {
+        rootId = parent.inReplyTo;
+        parent = byId.get(rootId);
+      }
+      if (!repliesByRoot.has(rootId)) repliesByRoot.set(rootId, []);
+      repliesByRoot.get(rootId)!.push(c);
+    }
+    // Sort replies chronologically
+    for (const replies of repliesByRoot.values()) {
+      replies.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    }
+
+    // Only add root comments (non-replies) to the stream
+    for (const c of allComments) {
+      if (replyIds.has(c.id)) continue;
+      items.push({
+        type: 'inline',
+        comment: c,
+        contextRows: getContextRows(c),
+        createdAt: c.createdAt
+      });
     }
 
     // Add timeline events
@@ -260,8 +296,12 @@
 
     // Sort chronologically
     items.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    return items;
+
+    return { items, repliesByRoot };
   });
+
+  let commentStream: StreamItem[] = $derived(_commentStreamData.items);
+  let repliesByRoot = $derived(_commentStreamData.repliesByRoot);
 
   function navigateToInline(path: string, line: number) {
     // Expand changeset box if collapsed
@@ -427,6 +467,7 @@
                 comment={item.comment}
                 contextRows={item.contextRows}
                 side={item.comment.side}
+                replies={repliesByRoot.get(item.comment.id) ?? []}
                 onNavigate={navigateToInline}
               />
             {:else}

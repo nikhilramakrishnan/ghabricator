@@ -45,6 +45,17 @@ type Review struct {
 	CreatedAt time.Time
 }
 
+type ReactionSummary struct {
+	PlusOne  int
+	MinusOne int
+	Laugh    int
+	Confused int
+	Heart    int
+	Hooray   int
+	Rocket   int
+	Eyes     int
+}
+
 type ReviewComment struct {
 	ID        int64
 	Author    User
@@ -56,6 +67,7 @@ type ReviewComment struct {
 	UpdatedAt time.Time
 	InReplyTo int64
 	DiffHunk  string
+	Reactions *ReactionSummary
 }
 
 type InlineCommentRequest struct {

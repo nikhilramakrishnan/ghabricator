@@ -61,6 +61,9 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/v2/merge", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIMerge)))
 	s.mux.Handle("POST /api/v2/close", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIClose)))
 
+	// Reactions
+	s.mux.Handle("POST /api/v2/reaction", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIReaction)))
+
 	// Repos
 	s.mux.Handle("GET /api/repos", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIRepos)))
 	s.mux.Handle("GET /api/repo/{owner}/{repo}/info", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIRepoInfo)))

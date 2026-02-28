@@ -3,15 +3,28 @@
   import type { APIDiffRow } from './DiffTable.svelte';
   import { formatTimestamp } from '$lib/time';
 
+  const EMOJI_ICONS: Record<string, string> = {
+    '+1': 'fa-thumbs-up',
+    '-1': 'fa-thumbs-down',
+    'laugh': 'fa-smile-o',
+    'confused': 'fa-question',
+    'heart': 'fa-heart',
+    'star': 'fa-star',
+    'rocket': 'fa-rocket',
+    'eyes': 'fa-eye'
+  };
+
   let {
     comment,
     contextRows = [],
     side = 'RIGHT',
+    replies = [],
     onNavigate
   }: {
     comment: APIReviewComment;
     contextRows?: APIDiffRow[];
     side?: string;
+    replies?: APIReviewComment[];
     onNavigate?: (path: string, line: number) => void;
   } = $props();
 
@@ -93,7 +106,49 @@
         {expanded ? 'Show Less' : 'Show More'}
       </button>
     {/if}
+    {#if comment.reactions?.length}
+      <div class="icwc-reactions">
+        {#each comment.reactions as r}
+          <span class="icwc-pill" >
+            <i class="fa {EMOJI_ICONS[r.emoji] ?? 'fa-smile-o'}"></i>
+            <span>{r.count}</span>
+          </span>
+        {/each}
+      </div>
+    {/if}
+    <div class="icwc-actions">
+      <button class="icwc-action" onclick={() => onNavigate?.(comment.path, comment.line)}>
+        <i class="fa fa-reply"></i> Reply
+      </button>
+    </div>
   </div>
+
+  {#if replies.length > 0}
+    {#each replies as reply}
+      <div class="icwc-reply">
+        <div class="icwc-meta">
+          {#if reply.author.avatarURL}
+            <img src={reply.author.avatarURL} alt="" class="icwc-avatar" />
+          {/if}
+          <strong>{reply.author.login}</strong>
+          <span class="icwc-time">{formatTimestamp(reply.createdAt)}</span>
+        </div>
+        <div class="icwc-body">
+          {@html reply.body}
+        </div>
+        {#if reply.reactions?.length}
+          <div class="icwc-reactions">
+            {#each reply.reactions as r}
+              <span class="icwc-pill" >
+                <i class="fa {EMOJI_ICONS[r.emoji] ?? 'fa-smile-o'}"></i>
+                <span>{r.count}</span>
+              </span>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/each}
+  {/if}
 </div>
 
 <style>
@@ -237,5 +292,54 @@
   }
   .icwc-toggle:hover {
     text-decoration: underline;
+  }
+
+  .icwc-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0 12px 8px;
+  }
+
+  .icwc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+  }
+  .icwc-pill.reacted {
+    background: var(--tag-blue-bg);
+    border-color: var(--blue);
+    color: var(--blue);
+  }
+
+  .icwc-actions {
+    padding: 6px 12px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    gap: 12px;
+  }
+  .icwc-action {
+    all: unset;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .icwc-action:hover {
+    color: var(--text-link);
+  }
+
+  .icwc-reply {
+    border-top: 1px solid var(--border-subtle);
+    margin-left: 24px;
+    border-left: 3px solid var(--blue);
   }
 </style>

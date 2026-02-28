@@ -232,7 +232,7 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 	for path, cmts := range commentsByPath {
 		apiCmts := make([]APIReviewComment, 0, len(cmts))
 		for _, c := range cmts {
-			apiCmts = append(apiCmts, APIReviewComment{
+			ac := APIReviewComment{
 				ID:        c.ID,
 				Author:    APIUser{Login: c.Author.Login, AvatarURL: c.Author.AvatarURL},
 				Body:      remarkup.Render(c.Body),
@@ -241,7 +241,27 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 				Side:      c.Side,
 				CreatedAt: c.CreatedAt,
 				InReplyTo: c.InReplyTo,
-			})
+			}
+			if c.Reactions != nil {
+				for _, pair := range []struct {
+					emoji string
+					count int
+				}{
+					{"+1", c.Reactions.PlusOne},
+					{"-1", c.Reactions.MinusOne},
+					{"laugh", c.Reactions.Laugh},
+					{"confused", c.Reactions.Confused},
+					{"heart", c.Reactions.Heart},
+					{"hooray", c.Reactions.Hooray},
+					{"rocket", c.Reactions.Rocket},
+					{"eyes", c.Reactions.Eyes},
+				} {
+					if pair.count > 0 {
+						ac.Reactions = append(ac.Reactions, APIReaction{Emoji: pair.emoji, Count: pair.count})
+					}
+				}
+			}
+			apiCmts = append(apiCmts, ac)
 		}
 		apiCommentsByPath[path] = apiCmts
 	}

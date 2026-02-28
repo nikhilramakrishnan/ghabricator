@@ -38,12 +38,13 @@ func (s *Server) handleAPIInline(w http.ResponseWriter, r *http.Request) {
 		id := nextDraftID()
 		draftMu.Lock()
 		draftStore[id] = &inlineDraft{
-			Owner:  req.Owner,
-			Repo:   req.Repo,
-			Number: req.Number,
-			Path:   req.Path,
-			Line:   req.Line,
-			Side:   side,
+			Owner:     req.Owner,
+			Repo:      req.Repo,
+			Number:    req.Number,
+			Path:      req.Path,
+			Line:      req.Line,
+			Side:      side,
+			InReplyTo: req.InReplyTo,
 		}
 		draftMu.Unlock()
 
@@ -69,9 +70,17 @@ func (s *Server) handleAPIInline(w http.ResponseWriter, r *http.Request) {
 		draftMu.Unlock()
 
 		if ok {
-			comment, err := ghapi.CreateReviewComment(ctx, client,
-				draft.Owner, draft.Repo, draft.Number,
-				body, draft.Path, draft.Line, draft.Side)
+			var comment *ghapi.ReviewComment
+			var err error
+			if draft.InReplyTo > 0 {
+				comment, err = ghapi.CreateReplyComment(ctx, client,
+					draft.Owner, draft.Repo, draft.Number,
+					body, draft.InReplyTo)
+			} else {
+				comment, err = ghapi.CreateReviewComment(ctx, client,
+					draft.Owner, draft.Repo, draft.Number,
+					body, draft.Path, draft.Line, draft.Side)
+			}
 			if err != nil {
 				jsonError(w, err.Error(), http.StatusBadGateway)
 				return
@@ -235,6 +244,35 @@ func (s *Server) handleAPIClose(w http.ResponseWriter, r *http.Request) {
 	_, _, err := client.PullRequests.Edit(r.Context(), req.Owner, req.Repo, req.Number, &gh.PullRequest{State: &req.State})
 	if err != nil {
 		jsonError(w, fmt.Sprintf("update PR state: %v", err), http.StatusBadGateway)
+		return
+	}
+	jsonOK(w, map[string]bool{"ok": true})
+}
+
+// --- Reactions API ---
+
+func (s *Server) handleAPIReaction(w http.ResponseWriter, r *http.Request) {
+	var req APIReactionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, "bad json", http.StatusBadRequest)
+		return
+	}
+
+	if req.Owner == "" || req.Repo == "" || req.CommentID == 0 || req.Content == "" {
+		jsonError(w, "missing owner/repo/commentID/content", http.StatusBadRequest)
+		return
+	}
+
+	switch req.Content {
+	case "+1", "-1", "laugh", "confused", "heart", "hooray", "rocket", "eyes":
+	default:
+		jsonError(w, "invalid reaction content", http.StatusBadRequest)
+		return
+	}
+
+	client := auth.GitHubClientFromContext(r.Context())
+	if err := ghapi.AddCommentReaction(r.Context(), client, req.Owner, req.Repo, req.CommentID, req.Content); err != nil {
+		jsonError(w, fmt.Sprintf("add reaction: %v", err), http.StatusBadGateway)
 		return
 	}
 	jsonOK(w, map[string]bool{"ok": true})

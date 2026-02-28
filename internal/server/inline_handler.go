@@ -7,12 +7,13 @@ import (
 
 // Draft inline comment stored in memory between op=new and op=save.
 type inlineDraft struct {
-	Owner  string
-	Repo   string
-	Number int
-	Path   string
-	Line   int
-	Side   string // LEFT or RIGHT
+	Owner     string
+	Repo      string
+	Number    int
+	Path      string
+	Line      int
+	Side      string // LEFT or RIGHT
+	InReplyTo int64  // if replying to an existing comment
 }
 
 var (

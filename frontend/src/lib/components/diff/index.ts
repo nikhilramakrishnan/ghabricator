@@ -6,5 +6,6 @@ export { default as InlineComment } from './InlineComment.svelte';
 export { default as InlineCommentWithContext } from './InlineCommentWithContext.svelte';
 export { default as InlineEditor } from './InlineEditor.svelte';
 export { default as ContextExpander } from './ContextExpander.svelte';
+export { default as ReactionPicker } from './ReactionPicker.svelte';
 
-export type { APIChangeset, APIDiffRow, APIReviewComment } from './DiffTable.svelte';
+export type { APIChangeset, APIDiffRow, APIReviewComment, APIReaction } from './DiffTable.svelte';

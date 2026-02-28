@@ -2,7 +2,8 @@
   import InlineComment from './InlineComment.svelte';
   import InlineEditor from './InlineEditor.svelte';
   import ContextExpander from './ContextExpander.svelte';
-  import { drafts, addDraft, removeDraft, updateDraft } from '$lib/stores/inline';
+  import { drafts, addDraft, addReplyDraft, removeDraft, updateDraft } from '$lib/stores/inline';
+  import { apiPost } from '$lib/api';
 
   export interface APIChangeset {
     id: number;
@@ -28,6 +29,11 @@
     isContext: boolean;
   }
 
+  export interface APIReaction {
+    emoji: string;
+    count: number;
+  }
+
   export interface APIReviewComment {
     id: number;
     author: string;
@@ -37,29 +43,81 @@
     line: number;
     side: string;
     createdAt: string;
+    inReplyTo?: number;
+    reactions?: APIReaction[];
   }
 
   let {
     changeset,
     comments = [],
+    owner = '',
+    repo = '',
     onNewComment
   }: {
     changeset: APIChangeset;
     comments?: APIReviewComment[];
+    owner?: string;
+    repo?: string;
     onNewComment?: (path: string, line: number, side: string) => void;
   } = $props();
 
   let fullWidth = $derived(changeset.isNew || changeset.isDeleted);
   let colSpan = $derived(fullWidth ? 2 : 6);
 
-  // Index comments by line+side for rendering after rows
-  let commentsByKey = $derived.by(() => {
-    const map = new Map<string, APIReviewComment[]>();
+  // Build threads: group replies under their root comment
+  interface CommentThread {
+    root: APIReviewComment;
+    replies: APIReviewComment[];
+  }
+
+  let threadsByKey = $derived.by(() => {
+    const map = new Map<string, CommentThread[]>();
+    // Index all comments by id for reply-to lookup
+    const byId = new Map<number, APIReviewComment>();
+    for (const c of comments) byId.set(c.id, c);
+
+    // Separate roots from replies
+    const roots: APIReviewComment[] = [];
+    const replies: APIReviewComment[] = [];
     for (const c of comments) {
-      const key = `${c.line}:${c.side}`;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(c);
+      if (c.inReplyTo && byId.has(c.inReplyTo)) {
+        replies.push(c);
+      } else {
+        roots.push(c);
+      }
     }
+
+    // Build thread map keyed by root comment id
+    const threadMap = new Map<number, CommentThread>();
+    for (const r of roots) {
+      threadMap.set(r.id, { root: r, replies: [] });
+    }
+    for (const r of replies) {
+      // Walk up to find root
+      let parentId = r.inReplyTo!;
+      let parent = byId.get(parentId);
+      while (parent && parent.inReplyTo && byId.has(parent.inReplyTo)) {
+        parent = byId.get(parent.inReplyTo);
+        if (parent) parentId = parent.id;
+      }
+      const thread = threadMap.get(parentId);
+      if (thread) {
+        thread.replies.push(r);
+      }
+    }
+
+    // Sort replies chronologically within each thread
+    for (const thread of threadMap.values()) {
+      thread.replies.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    }
+
+    // Group threads by line+side key
+    for (const thread of threadMap.values()) {
+      const key = `${thread.root.line}:${thread.root.side}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(thread);
+    }
+
     return map;
   });
 
@@ -76,21 +134,38 @@
     return d.some((x) => x.path === path && x.line === line && x.side === side);
   }
 
-  function getCommentsForRow(
+  function getThreadsForRow(
     row: APIDiffRow
-  ): { line: number; side: string; comments: APIReviewComment[] }[] {
-    const result: { line: number; side: string; comments: APIReviewComment[] }[] = [];
+  ): { line: number; side: string; threads: CommentThread[] }[] {
+    const result: { line: number; side: string; threads: CommentThread[] }[] = [];
     if (row.newNum > 0) {
       const key = `${row.newNum}:RIGHT`;
-      const cmts = commentsByKey.get(key);
-      if (cmts) result.push({ line: row.newNum, side: 'RIGHT', comments: cmts });
+      const threads = threadsByKey.get(key);
+      if (threads) result.push({ line: row.newNum, side: 'RIGHT', threads });
     }
     if (row.oldNum > 0) {
       const key = `${row.oldNum}:LEFT`;
-      const cmts = commentsByKey.get(key);
-      if (cmts) result.push({ line: row.oldNum, side: 'LEFT', comments: cmts });
+      const threads = threadsByKey.get(key);
+      if (threads) result.push({ line: row.oldNum, side: 'LEFT', threads });
     }
     return result;
+  }
+
+  function handleReply(comment: APIReviewComment) {
+    addReplyDraft(changeset.displayPath, comment.line, comment.side, comment.id);
+  }
+
+  async function handleReaction(commentId: number, emoji: string) {
+    try {
+      await apiPost('/api/v2/reaction', {
+        owner,
+        repo,
+        commentId,
+        emoji
+      });
+    } catch {
+      // ignore errors silently for now
+    }
   }
 </script>
 
@@ -174,16 +249,31 @@
           </tr>
         {/if}
 
-        {#each getCommentsForRow(row) as group}
-          {#each group.comments as comment}
-            <tr class="inline" id="ic-{comment.id}">
+        {#each getThreadsForRow(row) as group}
+          {#each group.threads as thread}
+            <tr class="inline" id="ic-{thread.root.id}">
               {#if fullWidth}
-                <td colspan="2"><InlineComment {comment} /></td>
+                <td colspan="2">
+                  <InlineComment comment={thread.root} onReply={() => handleReply(thread.root)} onReaction={(emoji) => handleReaction(thread.root.id, emoji)} />
+                  {#each thread.replies as reply, ri}
+                    <InlineComment comment={reply} isReply onReply={ri === thread.replies.length - 1 ? () => handleReply(reply) : undefined} onReaction={(emoji) => handleReaction(reply.id, emoji)} />
+                  {/each}
+                </td>
               {:else if group.side === 'RIGHT'}
                 <td colspan="2"></td>
-                <td colspan="4"><InlineComment {comment} /></td>
+                <td colspan="4">
+                  <InlineComment comment={thread.root} onReply={() => handleReply(thread.root)} onReaction={(emoji) => handleReaction(thread.root.id, emoji)} />
+                  {#each thread.replies as reply, ri}
+                    <InlineComment comment={reply} isReply onReply={ri === thread.replies.length - 1 ? () => handleReply(reply) : undefined} onReaction={(emoji) => handleReaction(reply.id, emoji)} />
+                  {/each}
+                </td>
               {:else}
-                <td colspan="2"><InlineComment {comment} /></td>
+                <td colspan="2">
+                  <InlineComment comment={thread.root} onReply={() => handleReply(thread.root)} onReaction={(emoji) => handleReaction(thread.root.id, emoji)} />
+                  {#each thread.replies as reply, ri}
+                    <InlineComment comment={reply} isReply onReply={ri === thread.replies.length - 1 ? () => handleReply(reply) : undefined} onReaction={(emoji) => handleReaction(reply.id, emoji)} />
+                  {/each}
+                </td>
                 <td colspan="4"></td>
               {/if}
             </tr>
