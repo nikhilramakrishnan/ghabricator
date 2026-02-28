@@ -274,12 +274,24 @@
       collapsedFiles = new Set(collapsedFiles);
     }
 
-    // Scroll to the changeset, then to the specific line
+    // Wait for DOM to update, then scroll to the exact line
     requestAnimationFrame(() => {
-      if (cs) {
-        const el = document.getElementById(`C${cs.id}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      requestAnimationFrame(() => {
+        if (!cs) return;
+        const container = document.getElementById(`C${cs.id}`);
+        if (!container) return;
+
+        // Find the td with matching data-n inside this changeset
+        const cell = container.querySelector(`td[data-n="${line}"]`);
+        const row = cell?.closest('tr');
+        if (row) {
+          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          row.classList.add('flash-highlight');
+          setTimeout(() => row.classList.remove('flash-highlight'), 2000);
+        } else {
+          container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
     });
   }
 

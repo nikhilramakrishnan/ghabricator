@@ -262,3 +262,12 @@ body.dark .p { color: inherit; }
 body.dark .c, body.dark .ch, body.dark .cm, body.dark .c1 { color: #8b949e; font-style: italic; }
 body.dark .cs, body.dark .cp, body.dark .cpf { color: #8b949e; font-style: italic; }
 body.dark .err { color: #f85149; }
+
+/* ===== Flash highlight for navigating to lines ===== */
+@keyframes flash-fade {
+  0% { background: rgba(255, 212, 59, 0.45); }
+  100% { background: transparent; }
+}
+.flash-highlight > td {
+  animation: flash-fade 2s ease-out;
+}
