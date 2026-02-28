@@ -176,7 +176,7 @@
 
         {#each getCommentsForRow(row) as group}
           {#each group.comments as comment}
-            <tr class="inline">
+            <tr class="inline" id="ic-{comment.id}">
               {#if fullWidth}
                 <td colspan="2"><InlineComment {comment} /></td>
               {:else if group.side === 'RIGHT'}

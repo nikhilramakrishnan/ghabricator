@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Breadcrumbs, FormationView } from '$lib/components/layout';
-  import { Box, HeaderView, Tag, Timeline } from '$lib/components/phui';
-  import { DiffTable, ChangesetHeader, CommitHistory, FileTree } from '$lib/components/diff';
-  import type { APIReviewComment as DiffComment } from '$lib/components/diff';
+  import { Box, HeaderView, Tag } from '$lib/components/phui';
+  import { DiffTable, ChangesetHeader, CommitHistory, FileTree, InlineCommentWithContext } from '$lib/components/diff';
+  import type { APIReviewComment as DiffComment, APIDiffRow } from '$lib/components/diff';
   import { ReviewForm } from '$lib/components/review';
   import { apiFetch } from '$lib/api';
   import { S } from '$lib/strings';
@@ -223,6 +223,66 @@
     }))
   );
 
+  // Unified comment stream: inline comments with code context + timeline events
+  type StreamItem =
+    | { type: 'inline'; comment: APIReviewComment; contextRows: APIDiffRow[]; createdAt: string }
+    | { type: 'timeline'; event: TimelineEvent; createdAt: string };
+
+  function getContextRows(comment: APIReviewComment): APIDiffRow[] {
+    const cs = displayChangesets.find(c => c.displayPath === comment.path);
+    if (!cs) return [];
+    const idx = cs.rows.findIndex(r =>
+      comment.side === 'RIGHT' ? r.newNum === comment.line : r.oldNum === comment.line
+    );
+    if (idx < 0) return [];
+    return cs.rows.slice(Math.max(0, idx - 2), idx + 3);
+  }
+
+  let commentStream: StreamItem[] = $derived.by(() => {
+    const items: StreamItem[] = [];
+
+    // Flatten all inline comments
+    for (const [, comments] of Object.entries(commentsByPath)) {
+      for (const c of comments) {
+        items.push({
+          type: 'inline',
+          comment: c,
+          contextRows: getContextRows(c),
+          createdAt: c.createdAt
+        });
+      }
+    }
+
+    // Add timeline events
+    for (const ev of timelineEvents) {
+      items.push({ type: 'timeline', event: ev, createdAt: ev.createdAt });
+    }
+
+    // Sort chronologically
+    items.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return items;
+  });
+
+  function navigateToInline(path: string, line: number) {
+    // Expand changeset box if collapsed
+    if (changesetCollapsed) changesetCollapsed = false;
+
+    // Find and expand the file
+    const cs = displayChangesets.find(c => c.displayPath === path);
+    if (cs && collapsedFiles.has(cs.id)) {
+      collapsedFiles.delete(cs.id);
+      collapsedFiles = new Set(collapsedFiles);
+    }
+
+    // Scroll to the changeset, then to the specific line
+    requestAnimationFrame(() => {
+      if (cs) {
+        const el = document.getElementById(`C${cs.id}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+
   // Merge/close actions
   function handleNewComment(path: string, line: number, side: string) {
     addDraft(path, line, side);
@@ -344,6 +404,43 @@
     </Box>
   {/if}
 
+  {#if commentStream.length > 0}
+    <Box border>
+      <HeaderView title="Comments" icon="fa-comments" count={commentStream.length} collapsible collapsed={commentsCollapsed} onToggle={() => commentsCollapsed = !commentsCollapsed} />
+      {#if !commentsCollapsed}
+        <div class="comment-stream">
+          {#each commentStream as item}
+            {#if item.type === 'inline'}
+              <InlineCommentWithContext
+                comment={item.comment}
+                contextRows={item.contextRows}
+                side={item.comment.side}
+                onNavigate={navigateToInline}
+              />
+            {:else}
+              <div class="stream-event">
+                {#if item.event.author.avatarURL}
+                  <img src={item.event.author.avatarURL} alt="" class="stream-avatar" />
+                {:else}
+                  <div class="stream-icon" style="background:{item.event.iconColor === 'green' ? 'var(--green)' : item.event.iconColor === 'red' ? 'var(--red)' : item.event.iconColor === 'blue' ? 'var(--blue)' : item.event.iconColor === 'violet' ? 'var(--violet)' : 'var(--text-muted)'}">
+                    <i class="fa {item.event.iconClass}"></i>
+                  </div>
+                {/if}
+                <div class="stream-body">
+                  <span><strong>{item.event.author.login}</strong> {item.event.action}</span>
+                  <span class="stream-time">{formatTimestamp(item.event.createdAt)}</span>
+                </div>
+                {#if item.event.body}
+                  <div class="stream-content">{@html item.event.body}</div>
+                {/if}
+              </div>
+            {/if}
+          {/each}
+        </div>
+      {/if}
+    </Box>
+  {/if}
+
   <Box border>
     <HeaderView title={S.pr.changeset} icon="fa-files-o" count={displayChangesets.length} collapsible collapsed={changesetCollapsed} onToggle={() => changesetCollapsed = !changesetCollapsed} />
     {#if !changesetCollapsed}
@@ -382,15 +479,6 @@
       baseBranch={pr.base.ref}
       onRangeChange={handleRangeChange}
     />
-  {/if}
-
-  {#if timelineEvents.length > 0}
-    <Box border>
-      <HeaderView title="Comments" icon="fa-comments" count={timelineEvents.length} collapsible collapsed={commentsCollapsed} onToggle={() => commentsCollapsed = !commentsCollapsed} />
-      {#if !commentsCollapsed}
-        <Timeline events={timelineEvents} />
-      {/if}
-    </Box>
   {/if}
 
   <ReviewForm {owner} {repo} {number} merged={pr.merged} prState={pr.state} authorLogin={pr.author.login} approved={isApproved} />
@@ -533,6 +621,74 @@
   }
   a.buildable-item:hover {
     color: var(--text);
+  }
+
+  /* Comment stream */
+  .comment-stream {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .stream-event {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    align-items: flex-start;
+  }
+  .stream-event:last-child {
+    border-bottom: none;
+  }
+
+  .stream-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .stream-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+    font-size: 12px;
+  }
+
+  .stream-body {
+    flex: 1;
+    font-size: 13px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-height: 28px;
+    align-items: center;
+  }
+
+  .stream-time {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  .stream-content {
+    width: 100%;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: break-word;
+    margin-left: 38px;
   }
 
   .interdiff-indicator {
