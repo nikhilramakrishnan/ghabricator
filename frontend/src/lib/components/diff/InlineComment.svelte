@@ -44,7 +44,7 @@
 
 <style>
   .inline-comment {
-    margin: 8px 0 8px 60px;
+    margin: 6px 8px;
     border: 1px solid var(--border);
     border-radius: 4px;
     background: var(--bg-card);
