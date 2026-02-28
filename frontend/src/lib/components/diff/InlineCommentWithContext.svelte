@@ -44,6 +44,16 @@
     if (isNew(row)) return '+';
     return ' ';
   }
+
+  let bodyEl: HTMLDivElement | undefined = $state();
+  let overflows = $state(false);
+  let expanded = $state(false);
+
+  $effect(() => {
+    if (bodyEl) {
+      overflows = bodyEl.scrollHeight > 120;
+    }
+  });
 </script>
 
 <div class="icwc">
@@ -74,7 +84,15 @@
       <strong>{comment.author.login}</strong>
       <span class="icwc-time">{formatTimestamp(comment.createdAt)}</span>
     </div>
-    <div class="icwc-body">{@html comment.body}</div>
+    <div class="icwc-body" class:collapsed={overflows && !expanded} bind:this={bodyEl}>
+      {@html comment.body}
+    </div>
+    {#if overflows}
+      <button class="icwc-toggle" onclick={() => expanded = !expanded}>
+        <i class="fa {expanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+        {expanded ? 'Show Less' : 'Show More'}
+      </button>
+    {/if}
   </div>
 </div>
 
@@ -172,21 +190,23 @@
   }
 
   .icwc-comment {
-    padding: 8px 12px;
+    border-top: 1px solid var(--border-subtle);
   }
   .icwc-meta {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    padding: 6px 12px;
     font-size: 12px;
-    margin-bottom: 6px;
+    background: var(--bg-card-header);
+    border-bottom: 1px solid var(--border-subtle);
   }
   .icwc-meta strong {
     color: var(--text);
   }
   .icwc-avatar {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 3px;
   }
   .icwc-time {
@@ -194,8 +214,28 @@
     margin-left: auto;
   }
   .icwc-body {
+    padding: 8px 12px;
     font-size: 13px;
     color: var(--text);
     line-height: 1.5;
+  }
+  .icwc-body.collapsed {
+    max-height: 120px;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  }
+  .icwc-toggle {
+    all: unset;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px 8px;
+    font-size: 11px;
+    color: var(--text-link);
+    cursor: pointer;
+  }
+  .icwc-toggle:hover {
+    text-decoration: underline;
   }
 </style>
