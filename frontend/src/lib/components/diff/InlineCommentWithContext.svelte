@@ -124,24 +124,23 @@
     display: flex;
     white-space: pre;
   }
-  .icwc-row.target {
-    background: var(--bg-hover);
-    outline: 1px solid var(--border);
-    outline-offset: -1px;
-  }
   .icwc-row.old {
     background: var(--diff-del-bg);
   }
   .icwc-row.new {
     background: var(--diff-add-bg);
   }
+  .icwc-row.target {
+    background: rgba(255, 212, 59, 0.25);
+    box-shadow: inset 3px 0 0 var(--yellow);
+  }
   .icwc-row.target.old {
-    background: var(--diff-del-bg);
-    outline: 1px solid var(--border);
+    background: rgba(255, 212, 59, 0.25);
+    box-shadow: inset 3px 0 0 var(--red);
   }
   .icwc-row.target.new {
-    background: var(--diff-add-bg);
-    outline: 1px solid var(--border);
+    background: rgba(255, 212, 59, 0.25);
+    box-shadow: inset 3px 0 0 var(--green);
   }
 
   .icwc-ln {
