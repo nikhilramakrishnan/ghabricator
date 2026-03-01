@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nikhilr/ghabricator/internal/auth"
+	ghub "github.com/nikhilr/ghabricator/internal/github"
 
 	gh "github.com/google/go-github/v68/github"
 )
@@ -85,18 +86,52 @@ func (s *Server) searchPRs(r *http.Request, client *gh.Client, query string) []d
 }
 
 func (s *Server) handleAPIDashboard(w http.ResponseWriter, r *http.Request) {
-	client := auth.GitHubClientFromContext(r.Context())
 	sess := auth.SessionFromContext(r.Context())
+	token := sess.Token.AccessToken
 	login := sess.Login
 
-	authored := s.searchPRs(r, client, fmt.Sprintf("is:open is:pr author:%s", login))
-	reviewing := s.searchPRs(r, client, fmt.Sprintf("is:open is:pr review-requested:%s", login))
+	authored, reviewing, err := ghub.FetchDashboardGraphQL(r.Context(), token, login)
+	if err != nil {
+		log.Printf("dashboard graphql error: %v", err)
+		http.Error(w, "failed to fetch dashboard", http.StatusInternalServerError)
+		return
+	}
 
 	resp := APIDashboardResponse{
-		Authored:        dashboardPRsToAPI(authored),
-		ReviewRequested: dashboardPRsToAPI(reviewing),
+		Authored:        gqlPRsToAPI(authored),
+		ReviewRequested: gqlPRsToAPI(reviewing),
 	}
 	jsonOK(w, resp)
+}
+
+func gqlPRsToAPI(prs []ghub.DashboardPR) []APIPRSummary {
+	result := make([]APIPRSummary, 0, len(prs))
+	for _, pr := range prs {
+		owner, repo := splitRepo(pr.Repo)
+		s := APIPRSummary{
+			Number: pr.Number,
+			Title:  pr.Title,
+			Owner:  owner,
+			Repo:   repo,
+			Author: APIUser{
+				Login:     pr.Author,
+				AvatarURL: pr.AvatarURL,
+			},
+			Draft:     pr.Draft,
+			UpdatedAt: timeAgo(pr.UpdatedAt),
+		}
+		for _, l := range pr.Labels {
+			s.Labels = append(s.Labels, APILabel{Name: l.Name, Color: l.Color})
+		}
+		for _, u := range pr.Assignees {
+			s.Reviewers = append(s.Reviewers, APIUser{
+				Login:     u.Login,
+				AvatarURL: u.AvatarURL,
+			})
+		}
+		result = append(result, s)
+	}
+	return result
 }
 
 func dashboardPRsToAPI(prs []dashboardPR) []APIPRSummary {

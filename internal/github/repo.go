@@ -1,12 +1,8 @@
 package github
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	gh "github.com/google/go-github/v68/github"
@@ -59,36 +55,11 @@ func FetchBlame(ctx context.Context, token, owner, repo, ref, path string) ([]Bl
 		}
 	}`
 
-	payload := map[string]interface{}{
-		"query": query,
-		"variables": map[string]string{
-			"owner": owner,
-			"repo":  repo,
-			"ref":   ref,
-			"path":  path,
-		},
-	}
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("marshal graphql: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.github.com/graphql", bytes.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("create graphql request: %w", err)
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("graphql request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read graphql response: %w", err)
+	vars := map[string]interface{}{
+		"owner": owner,
+		"repo":  repo,
+		"ref":   ref,
+		"path":  path,
 	}
 
 	var result struct {
@@ -119,16 +90,10 @@ func FetchBlame(ctx context.Context, token, owner, repo, ref, path string) ([]Bl
 				} `json:"ref"`
 			} `json:"repository"`
 		} `json:"data"`
-		Errors []struct {
-			Message string `json:"message"`
-		} `json:"errors"`
 	}
 
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		return nil, fmt.Errorf("decode graphql response: %w", err)
-	}
-	if len(result.Errors) > 0 {
-		return nil, fmt.Errorf("graphql error: %s", result.Errors[0].Message)
+	if err := QueryGraphQL(ctx, token, query, vars, &result); err != nil {
+		return nil, err
 	}
 
 	ranges := result.Data.Repository.Ref.Target.Blame.Ranges

@@ -146,41 +146,34 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sess := auth.SessionFromContext(r.Context())
 	client := auth.GitHubClientFromContext(r.Context())
+	token := sess.Token.AccessToken
 	ctx := r.Context()
 
-	// Parallel fetch — same as HTML handler.
+	// Parallel fetch: 1 GraphQL (PR + reviews + comments + commits) + 2 REST (diff + review comments).
 	var (
-		pr            *ghapi.PullRequest
-		rawDiff       string
-		comments      []ghapi.ReviewComment
-		reviews       []ghapi.Review
-		issueComments []ghapi.IssueComment
-		commits       []ghapi.PRCommit
-		prErr, diffErr, commentsErr, reviewsErr, issueCommentsErr, commitsErr error
+		gqlResult *ghapi.PRDetailGraphQL
+		rawDiff   string
+		comments  []ghapi.ReviewComment
+		gqlErr, diffErr, commentsErr error
 	)
 
 	var wg sync.WaitGroup
-	wg.Add(6)
-	go func() { defer wg.Done(); pr, prErr = ghapi.FetchPR(ctx, client, owner, repo, number) }()
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		gqlResult, gqlErr = ghapi.FetchPRDetailGraphQL(ctx, token, owner, repo, number)
+	}()
 	go func() { defer wg.Done(); rawDiff, diffErr = ghapi.FetchDiff(ctx, client, owner, repo, number) }()
 	go func() {
 		defer wg.Done()
 		comments, commentsErr = ghapi.FetchReviewComments(ctx, client, owner, repo, number)
 	}()
-	go func() { defer wg.Done(); reviews, reviewsErr = ghapi.FetchReviews(ctx, client, owner, repo, number) }()
-	go func() {
-		defer wg.Done()
-		issueComments, issueCommentsErr = ghapi.FetchIssueComments(ctx, client, owner, repo, number)
-	}()
-	go func() {
-		defer wg.Done()
-		commits, commitsErr = ghapi.FetchPRCommits(ctx, client, owner, repo, number)
-	}()
 	wg.Wait()
 
-	if prErr != nil {
-		jsonError(w, fmt.Sprintf("could not load PR: %v", prErr), http.StatusBadGateway)
+	if gqlErr != nil {
+		jsonError(w, fmt.Sprintf("could not load PR: %v", gqlErr), http.StatusBadGateway)
 		return
 	}
 	if diffErr != nil {
@@ -188,24 +181,17 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch check runs (need head SHA).
-	checkRuns, checksErr := ghapi.FetchCheckRuns(ctx, client, owner, repo, pr.Head.SHA)
-	if checksErr != nil {
-		checkRuns = nil
-	}
+	pr := gqlResult.PR
+	reviews := gqlResult.Reviews
+	issueComments := gqlResult.IssueComments
+	commits := gqlResult.Commits
+
+	// Fetch check runs via REST (needs head SHA from GraphQL result).
+	checkRuns, _ := ghapi.FetchCheckRuns(ctx, client, owner, repo, pr.Head.SHA)
 
 	// Non-fatal errors.
 	if commentsErr != nil {
 		comments = nil
-	}
-	if reviewsErr != nil {
-		reviews = nil
-	}
-	if issueCommentsErr != nil {
-		issueComments = nil
-	}
-	if commitsErr != nil {
-		commits = nil
 	}
 
 	// Parse diff.
