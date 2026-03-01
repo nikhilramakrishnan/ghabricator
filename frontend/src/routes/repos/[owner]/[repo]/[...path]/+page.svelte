@@ -1,7 +1,8 @@
 <script lang="ts">
   import { Breadcrumbs, CurtainLayout } from '$lib/components/layout';
-  import { CurtainBox, PropertyList, Tag, ActionList, InfoView } from '$lib/components/phui';
-  import type { APIRepoEntry, APIRepoInfo } from '$lib/types';
+  import { CurtainBox, PropertyList, ActionList, InfoView } from '$lib/components/phui';
+  import type { APIRepoEntry, APIRepoInfo, APIBlameRange } from '$lib/types';
+  import { apiFetch } from '$lib/api';
   import { S } from '$lib/strings';
 
   let { data } = $props();
@@ -11,7 +12,57 @@
   let ref = $derived(data.ref);
   let mode = $derived(data.mode);
 
-  // Build breadcrumbs from path segments
+  // Blame state
+  let blameEnabled = $state(false);
+  let blameRanges: APIBlameRange[] = $state([]);
+  let blameLoading = $state(false);
+
+  // Build a line→range lookup when blame is loaded
+  let blameByLine = $derived.by(() => {
+    const map = new Map<number, APIBlameRange>();
+    for (const r of blameRanges) {
+      for (let i = r.startLine; i <= r.endLine; i++) {
+        map.set(i, r);
+      }
+    }
+    return map;
+  });
+
+  // Track which lines are the first in their blame range (show annotation there)
+  let blameFirstLines = $derived.by(() => {
+    const set = new Set<number>();
+    for (const r of blameRanges) {
+      set.add(r.startLine);
+    }
+    return set;
+  });
+
+  async function toggleBlame() {
+    if (blameEnabled) {
+      blameEnabled = false;
+      return;
+    }
+    if (blameRanges.length > 0) {
+      blameEnabled = true;
+      return;
+    }
+    blameLoading = true;
+    try {
+      const qs = new URLSearchParams();
+      if (ref) qs.set('ref', ref);
+      if (path) qs.set('path', path);
+      const query = qs.toString() ? `?${qs.toString()}` : '';
+      const resp = await apiFetch<{ ranges: APIBlameRange[] }>(`/api/repo/${owner}/${repo}/blame${query}`);
+      blameRanges = resp.ranges;
+      blameEnabled = true;
+    } catch (e) {
+      console.error('Blame fetch failed:', e);
+    } finally {
+      blameLoading = false;
+    }
+  }
+
+  // Breadcrumbs
   let crumbs = $derived.by(() => {
     const items: { name: string; href?: string }[] = [
       { name: S.crumb.home, href: '/' },
@@ -33,7 +84,6 @@
     return items;
   });
 
-  // Helpers
   function entryHref(entry: APIRepoEntry): string {
     const qs = ref ? `?ref=${ref}` : '';
     return `/repos/${owner}/${repo}/${entry.path}${qs}`;
@@ -57,7 +107,6 @@
     return /\.(png|jpg|jpeg|gif|webp|svg|ico|bmp)$/i.test(name);
   }
 
-  // Curtain for sidebar
   function buildCurtainProps(info: APIRepoInfo) {
     return [
       { label: S.repos.visibility, value: info.private ? 'Private' : 'Public' },
@@ -65,6 +114,30 @@
       { label: S.repos.forks, value: String(info.forks) }
     ];
   }
+
+  function timeAgo(dateStr: string): string {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (days === 0) return 'today';
+    if (days === 1) return 'yesterday';
+    if (days < 30) return `${days}d ago`;
+    if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+    return `${Math.floor(days / 365)}y ago`;
+  }
+
+  // Assign alternating colors to commits for visual grouping
+  let commitColorMap = $derived.by(() => {
+    const map = new Map<string, number>();
+    let idx = 0;
+    for (const r of blameRanges) {
+      if (!map.has(r.commitOID)) {
+        map.set(r.commitOID, idx++ % 6);
+      }
+    }
+    return map;
+  });
 </script>
 
 <div class="page-wrapper">
@@ -139,7 +212,6 @@
   {@const file = fileResp.file}
   {@const info = fileResp.repoInfo}
   <CurtainLayout>
-    <!-- File header -->
     <div class="file-viewer-box">
       <div class="file-header">
         <h1 class="file-title">
@@ -147,11 +219,28 @@
           {file.name}
           <span class="file-size">{formatSize(file.size)}</span>
         </h1>
-        {#if file.htmlURL}
-          <a href={file.htmlURL} target="_blank" rel="noopener" class="gh-link-btn">
-            <i class="fa fa-github mrs"></i>GitHub
-          </a>
-        {/if}
+        <div class="file-header-actions">
+          {#if file.lines && !isImage(file.name)}
+            <button
+              class="header-btn"
+              class:header-btn-active={blameEnabled}
+              onclick={toggleBlame}
+              disabled={blameLoading}
+              title="Toggle blame annotations"
+            >
+              {#if blameLoading}
+                <i class="fa fa-spinner fa-spin"></i>
+              {:else}
+                <i class="fa fa-history mrs"></i>Blame
+              {/if}
+            </button>
+          {/if}
+          {#if file.htmlURL}
+            <a href={file.htmlURL} target="_blank" rel="noopener" class="header-btn">
+              <i class="fa fa-github mrs"></i>GitHub
+            </a>
+          {/if}
+        </div>
       </div>
 
       {#if file.rawURL && isImage(file.name)}
@@ -160,11 +249,28 @@
         </div>
       {:else if file.lines}
         <div class="source-container">
-          <table class="source-table">
+          <table class="source-table" class:blame-active={blameEnabled}>
             <tbody>
               {#each file.lines as line, i}
-                <tr>
-                  <th class="line-number"><span>{i + 1}</span></th>
+                {@const lineNum = i + 1}
+                {@const blameRange = blameEnabled ? blameByLine.get(lineNum) : null}
+                {@const isFirst = blameEnabled && blameFirstLines.has(lineNum)}
+                {@const colorIdx = blameRange ? commitColorMap.get(blameRange.commitOID) ?? 0 : 0}
+                <tr class:blame-boundary={isFirst && lineNum > 1}>
+                  {#if blameEnabled}
+                    <td class="blame-gutter blame-color-{colorIdx}" class:blame-first={isFirst}>
+                      {#if isFirst && blameRange}
+                        <div class="blame-info">
+                          <span class="blame-commit" title={blameRange.message}>{blameRange.commitShort}</span>
+                          <span class="blame-author" title={blameRange.authorLogin || blameRange.authorName}>
+                            {blameRange.authorLogin || blameRange.authorName}
+                          </span>
+                          <span class="blame-date">{timeAgo(blameRange.authoredDate)}</span>
+                        </div>
+                      {/if}
+                    </td>
+                  {/if}
+                  <th class="line-number"><span>{lineNum}</span></th>
                   <td class="line-code">{@html line}</td>
                 </tr>
               {/each}
@@ -288,7 +394,13 @@
     margin-left: 8px;
   }
 
-  .gh-link-btn {
+  .file-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .header-btn {
     font-size: 12px;
     padding: 4px 10px;
     border: 1px solid var(--border);
@@ -296,11 +408,29 @@
     color: var(--text);
     text-decoration: none;
     background: var(--bg-card);
+    cursor: pointer;
+    white-space: nowrap;
   }
 
-  .gh-link-btn:hover {
+  .header-btn:hover {
     background: var(--bg-hover);
     text-decoration: none;
+  }
+
+  .header-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .header-btn-active {
+    background: var(--blue);
+    color: #fff;
+    border-color: var(--blue);
+  }
+
+  .header-btn-active:hover {
+    background: var(--blue);
+    opacity: 0.9;
   }
 
   .image-preview {
@@ -344,4 +474,62 @@
     white-space: pre;
     color: var(--text);
   }
+
+  /* Blame gutter */
+  .blame-gutter {
+    width: 1%;
+    min-width: 200px;
+    max-width: 240px;
+    padding: 0;
+    vertical-align: top;
+    user-select: none;
+    background: var(--bg-subtle);
+    border-right: 1px solid var(--border-subtle);
+    overflow: hidden;
+  }
+
+  .blame-boundary td,
+  .blame-boundary th {
+    border-top: 1px solid var(--border);
+  }
+
+  .blame-first .blame-info {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 0 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.6;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .blame-commit {
+    color: var(--blue);
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .blame-author {
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .blame-date {
+    color: var(--text-muted);
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  /* Alternating commit colors via left border */
+  .blame-color-0 { border-left: 3px solid var(--blue); }
+  .blame-color-1 { border-left: 3px solid var(--green); }
+  .blame-color-2 { border-left: 3px solid var(--orange); }
+  .blame-color-3 { border-left: 3px solid var(--violet); }
+  .blame-color-4 { border-left: 3px solid var(--red); }
+  .blame-color-5 { border-left: 3px solid var(--yellow); }
 </style>

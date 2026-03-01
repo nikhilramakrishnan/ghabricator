@@ -280,6 +280,24 @@ type APIRepoFileResponse struct {
 	RepoInfo APIRepoInfo `json:"repoInfo"`
 }
 
+// --- Blame API types ---
+
+type APIBlameRange struct {
+	StartLine       int    `json:"startLine"`
+	EndLine         int    `json:"endLine"`
+	CommitOID       string `json:"commitOID"`
+	CommitShort     string `json:"commitShort"`
+	Message         string `json:"message"`
+	AuthorLogin     string `json:"authorLogin"`
+	AuthorAvatarURL string `json:"authorAvatarURL"`
+	AuthorName      string `json:"authorName"`
+	AuthoredDate    string `json:"authoredDate"`
+}
+
+type APIBlameResponse struct {
+	Ranges []APIBlameRange `json:"ranges"`
+}
+
 // --- Paste API types ---
 
 type APIPasteSummary struct {

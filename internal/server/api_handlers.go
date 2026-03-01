@@ -488,6 +488,47 @@ func (s *Server) handleAPIRepoFile(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) handleAPIRepoBlame(w http.ResponseWriter, r *http.Request) {
+	owner := r.PathValue("owner")
+	repo := r.PathValue("repo")
+	ref := r.URL.Query().Get("ref")
+	path := r.URL.Query().Get("path")
+	sess := auth.SessionFromContext(r.Context())
+
+	if ref == "" {
+		client := auth.GitHubClientFromContext(r.Context())
+		info, err := ghapi.FetchRepoInfo(r.Context(), client, owner, repo)
+		if err != nil {
+			jsonError(w, fmt.Sprintf("repo not found: %v", err), http.StatusNotFound)
+			return
+		}
+		ref = info.DefaultBranch
+	}
+
+	ranges, err := ghapi.FetchBlame(r.Context(), sess.Token.AccessToken, owner, repo, ref, path)
+	if err != nil {
+		jsonError(w, fmt.Sprintf("blame failed: %v", err), http.StatusBadGateway)
+		return
+	}
+
+	apiRanges := make([]APIBlameRange, 0, len(ranges))
+	for _, br := range ranges {
+		apiRanges = append(apiRanges, APIBlameRange{
+			StartLine:       br.StartLine,
+			EndLine:         br.EndLine,
+			CommitOID:       br.Commit.OID,
+			CommitShort:     br.Commit.AbbreviatedOID,
+			Message:         br.Commit.MessageHeadline,
+			AuthorLogin:     br.Commit.AuthorLogin,
+			AuthorAvatarURL: br.Commit.AuthorAvatarURL,
+			AuthorName:      br.Commit.AuthorName,
+			AuthoredDate:    br.Commit.AuthoredDate.Format("2006-01-02"),
+		})
+	}
+
+	jsonOK(w, APIBlameResponse{Ranges: apiRanges})
+}
+
 // --- Task 9: Paste API ---
 
 func (s *Server) handleAPIPasteList(w http.ResponseWriter, r *http.Request) {

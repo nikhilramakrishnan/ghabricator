@@ -218,6 +218,24 @@ export interface APIRepoFileResponse {
   repoInfo: APIRepoInfo;
 }
 
+// --- Blame ---
+
+export interface APIBlameRange {
+  startLine: number;
+  endLine: number;
+  commitOID: string;
+  commitShort: string;
+  message: string;
+  authorLogin: string;
+  authorAvatarURL: string;
+  authorName: string;
+  authoredDate: string;
+}
+
+export interface APIBlameResponse {
+  ranges: APIBlameRange[];
+}
+
 // --- Paste ---
 
 export interface APIPasteSummary {

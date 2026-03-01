@@ -1,11 +1,159 @@
 package github
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"time"
 
 	gh "github.com/google/go-github/v68/github"
 )
+
+// BlameRange represents a contiguous range of lines attributed to a single commit.
+type BlameRange struct {
+	StartLine int
+	EndLine   int
+	Commit    BlameCommit
+}
+
+// BlameCommit holds the commit info for a blame range.
+type BlameCommit struct {
+	OID              string
+	AbbreviatedOID   string
+	MessageHeadline  string
+	AuthoredDate     time.Time
+	AuthorLogin      string
+	AuthorAvatarURL  string
+	AuthorName       string
+}
+
+// FetchBlame fetches per-line blame data via GitHub's GraphQL API.
+func FetchBlame(ctx context.Context, token, owner, repo, ref, path string) ([]BlameRange, error) {
+	query := `query($owner: String!, $repo: String!, $ref: String!, $path: String!) {
+		repository(owner: $owner, name: $repo) {
+			ref(qualifiedName: $ref) {
+				target {
+					... on Commit {
+						blame(path: $path) {
+							ranges {
+								startingLine
+								endingLine
+								commit {
+									oid
+									abbreviatedOid
+									messageHeadline
+									authoredDate
+									author {
+										user { login avatarUrl }
+										name
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}`
+
+	payload := map[string]interface{}{
+		"query": query,
+		"variables": map[string]string{
+			"owner": owner,
+			"repo":  repo,
+			"ref":   ref,
+			"path":  path,
+		},
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("marshal graphql: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.github.com/graphql", bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("create graphql request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("graphql request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read graphql response: %w", err)
+	}
+
+	var result struct {
+		Data struct {
+			Repository struct {
+				Ref struct {
+					Target struct {
+						Blame struct {
+							Ranges []struct {
+								StartingLine int `json:"startingLine"`
+								EndingLine   int `json:"endingLine"`
+								Commit       struct {
+									OID              string `json:"oid"`
+									AbbreviatedOID   string `json:"abbreviatedOid"`
+									MessageHeadline  string `json:"messageHeadline"`
+									AuthoredDate     string `json:"authoredDate"`
+									Author           struct {
+										User *struct {
+											Login     string `json:"login"`
+											AvatarURL string `json:"avatarUrl"`
+										} `json:"user"`
+										Name string `json:"name"`
+									} `json:"author"`
+								} `json:"commit"`
+							} `json:"ranges"`
+						} `json:"blame"`
+					} `json:"target"`
+				} `json:"ref"`
+			} `json:"repository"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("decode graphql response: %w", err)
+	}
+	if len(result.Errors) > 0 {
+		return nil, fmt.Errorf("graphql error: %s", result.Errors[0].Message)
+	}
+
+	ranges := result.Data.Repository.Ref.Target.Blame.Ranges
+	out := make([]BlameRange, 0, len(ranges))
+	for _, r := range ranges {
+		authoredDate, _ := time.Parse(time.RFC3339, r.Commit.AuthoredDate)
+		br := BlameRange{
+			StartLine: r.StartingLine,
+			EndLine:   r.EndingLine,
+			Commit: BlameCommit{
+				OID:             r.Commit.OID,
+				AbbreviatedOID:  r.Commit.AbbreviatedOID,
+				MessageHeadline: r.Commit.MessageHeadline,
+				AuthoredDate:    authoredDate,
+				AuthorName:      r.Commit.Author.Name,
+			},
+		}
+		if r.Commit.Author.User != nil {
+			br.Commit.AuthorLogin = r.Commit.Author.User.Login
+			br.Commit.AuthorAvatarURL = r.Commit.Author.User.AvatarURL
+		}
+		out = append(out, br)
+	}
+	return out, nil
+}
 
 // RepoInfo holds basic repository metadata.
 type RepoInfo struct {

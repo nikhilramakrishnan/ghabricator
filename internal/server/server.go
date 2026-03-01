@@ -73,6 +73,7 @@ func (s *Server) routes() {
 	s.mux.Handle("GET /api/repo/{owner}/{repo}/info", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIRepoInfo)))
 	s.mux.Handle("GET /api/repo/{owner}/{repo}/tree", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIRepoTree)))
 	s.mux.Handle("GET /api/repo/{owner}/{repo}/file", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIRepoFile)))
+	s.mux.Handle("GET /api/repo/{owner}/{repo}/blame", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIRepoBlame)))
 
 	// Paste
 	s.mux.Handle("GET /api/paste", s.auth.RequireAuth(http.HandlerFunc(s.handleAPIPasteList)))
