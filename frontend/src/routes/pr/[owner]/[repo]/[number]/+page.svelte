@@ -234,6 +234,7 @@
       author: { login: ev.author.login, avatarURL: ev.author.avatarURL },
       action: ev.action,
       body: ev.body,
+      bodyRaw: ev.bodyRaw,
       createdAt: ev.createdAt,
       iconClass: ev.iconClass,
       iconColor: ev.iconColor,
