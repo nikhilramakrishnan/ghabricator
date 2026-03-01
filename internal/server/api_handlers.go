@@ -271,7 +271,13 @@ func (s *Server) handleAPIReaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := auth.GitHubClientFromContext(r.Context())
-	if err := ghapi.AddCommentReaction(r.Context(), client, req.Owner, req.Repo, req.CommentID, req.Content); err != nil {
+	var err error
+	if req.CommentType == "issue" {
+		err = ghapi.AddIssueCommentReaction(r.Context(), client, req.Owner, req.Repo, req.CommentID, req.Content)
+	} else {
+		err = ghapi.AddCommentReaction(r.Context(), client, req.Owner, req.Repo, req.CommentID, req.Content)
+	}
+	if err != nil {
 		jsonError(w, fmt.Sprintf("add reaction: %v", err), http.StatusBadGateway)
 		return
 	}

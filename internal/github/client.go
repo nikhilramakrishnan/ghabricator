@@ -314,6 +314,12 @@ func AddCommentReaction(ctx context.Context, client *gh.Client, owner, repo stri
 	return nil
 }
 
+// AddIssueCommentReaction adds a reaction to an issue comment.
+func AddIssueCommentReaction(ctx context.Context, client *gh.Client, owner, repo string, commentID int64, content string) error {
+	_, _, err := client.Reactions.CreateIssueCommentReaction(ctx, owner, repo, commentID, content)
+	return err
+}
+
 // UpdateReviewComment updates an existing inline review comment.
 func UpdateReviewComment(ctx context.Context, client *gh.Client, owner, repo string, commentID int64, body string) (*ReviewComment, error) {
 	comment := &gh.PullRequestComment{
@@ -359,7 +365,7 @@ func FetchIssueComments(ctx context.Context, client *gh.Client, owner, repo stri
 			return nil, fmt.Errorf("fetch issue comments: %w", err)
 		}
 		for _, c := range comments {
-			result = append(result, IssueComment{
+			ic := IssueComment{
 				ID:        c.GetID(),
 				Body:      c.GetBody(),
 				CreatedAt: c.GetCreatedAt().Time,
@@ -367,7 +373,20 @@ func FetchIssueComments(ctx context.Context, client *gh.Client, owner, repo stri
 					Login:     c.GetUser().GetLogin(),
 					AvatarURL: c.GetUser().GetAvatarURL(),
 				},
-			})
+			}
+			if c.Reactions != nil {
+				ic.Reactions = &ReactionSummary{
+					PlusOne:  c.Reactions.GetPlusOne(),
+					MinusOne: c.Reactions.GetMinusOne(),
+					Laugh:    c.Reactions.GetLaugh(),
+					Confused: c.Reactions.GetConfused(),
+					Heart:    c.Reactions.GetHeart(),
+					Hooray:   c.Reactions.GetHooray(),
+					Rocket:   c.Reactions.GetRocket(),
+					Eyes:     c.Reactions.GetEyes(),
+				}
+			}
+			result = append(result, ic)
 		}
 		if resp.NextPage == 0 {
 			break

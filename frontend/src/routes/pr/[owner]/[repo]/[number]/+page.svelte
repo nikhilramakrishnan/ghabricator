@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Breadcrumbs, FormationView } from '$lib/components/layout';
   import { Box, HeaderView, Tag } from '$lib/components/phui';
-  import { DiffTable, ChangesetHeader, CommitHistory, FileTree, InlineCommentWithContext } from '$lib/components/diff';
+  import { DiffTable, ChangesetHeader, CommitHistory, FileTree, InlineCommentWithContext, ReactionPicker } from '$lib/components/diff';
   import type { APIReviewComment as DiffComment, APIDiffRow } from '$lib/components/diff';
   import { ReviewForm } from '$lib/components/review';
-  import { apiFetch } from '$lib/api';
+  import { apiFetch, apiPost } from '$lib/api';
   import { S } from '$lib/strings';
   import { formatTimestamp } from '$lib/time';
   import { addDraft } from '$lib/stores/inline';
@@ -221,7 +221,10 @@
       body: ev.body,
       createdAt: ev.createdAt,
       iconClass: ev.iconClass,
-      iconColor: ev.iconColor
+      iconColor: ev.iconColor,
+      commentID: ev.commentID,
+      commentType: ev.commentType,
+      reactions: ev.reactions
     }))
   );
 
@@ -340,6 +343,53 @@
     addDraft(path, line, side);
   }
 
+  const EMOJI_ICONS: Record<string, string> = {
+    '+1': 'fa-thumbs-up',
+    '-1': 'fa-thumbs-down',
+    'laugh': 'fa-smile-o',
+    'confused': 'fa-question',
+    'heart': 'fa-heart',
+    'star': 'fa-star',
+    'rocket': 'fa-rocket',
+    'eyes': 'fa-eye'
+  };
+
+  let reactionPickerOpen = $state<number | null>(null);
+  let localReactions = $state<Map<number, import('$lib/types').APIReaction[]>>(new Map());
+
+  function getReactions(ev: TimelineEvent): import('$lib/types').APIReaction[] {
+    if (ev.commentID && localReactions.has(ev.commentID)) {
+      return localReactions.get(ev.commentID)!;
+    }
+    return ev.reactions ?? [];
+  }
+
+  async function handleTimelineReaction(ev: TimelineEvent, emoji: string) {
+    if (!ev.commentID || !ev.commentType) return;
+    try {
+      await apiPost('/api/v2/reaction', {
+        owner,
+        repo,
+        commentID: ev.commentID,
+        content: emoji,
+        commentType: ev.commentType
+      });
+      // Optimistic update in local state
+      const current = getReactions(ev).map(r => ({ ...r }));
+      const existing = current.find(r => r.emoji === emoji);
+      if (existing) {
+        existing.count++;
+      } else {
+        current.push({ emoji, count: 1 });
+      }
+      localReactions.set(ev.commentID, current);
+      localReactions = new Map(localReactions);
+    } catch {
+      // silent fail
+    }
+    reactionPickerOpen = null;
+  }
+
   let crumbs = $derived([
     { name: S.crumb.home, href: '/' },
     { name: S.revisions.title, href: '/dashboard' },
@@ -358,7 +408,7 @@
 
 <FormationView>
   {#snippet filetree()}
-    <FileTree changesets={displayChangesets} activeFile={activePath} />
+    <FileTree changesets={displayChangesets} activeFile={activePath} commentCounts={Object.fromEntries(Object.entries(commentsByPath).map(([k, v]) => [k, v.length]))} />
   {/snippet}
 
   <!-- Revision Contents — Phabricator-style property card -->
@@ -470,22 +520,62 @@
                 replies={repliesByRoot.get(item.comment.id) ?? []}
                 onNavigate={navigateToInline}
               />
-            {:else}
-              <div class="stream-event">
-                {#if item.event.author.avatarURL}
-                  <img src={item.event.author.avatarURL} alt="" class="stream-avatar" />
-                {:else}
-                  <div class="stream-icon" style="background:{item.event.iconColor === 'green' ? 'var(--green)' : item.event.iconColor === 'red' ? 'var(--red)' : item.event.iconColor === 'blue' ? 'var(--blue)' : item.event.iconColor === 'violet' ? 'var(--violet)' : 'var(--text-muted)'}">
-                    <i class="fa {item.event.iconClass}"></i>
+            {:else if item.event.body}
+              {@const reactions = getReactions(item.event)}
+              <div class="stream-card">
+                <div class="stream-card-meta">
+                  {#if item.event.author.avatarURL}
+                    <img src={item.event.author.avatarURL} alt="" class="stream-card-avatar" />
+                  {/if}
+                  <strong>{item.event.author.login}</strong>
+                  <span class="stream-card-action">{item.event.action}</span>
+                  <span class="stream-card-time">{formatTimestamp(item.event.createdAt)}</span>
+                </div>
+                <div class="stream-card-body">
+                  {@html item.event.body}
+                </div>
+                {#if reactions.length > 0}
+                  <div class="stream-card-reactions">
+                    {#each reactions as r}
+                      <button
+                        class="stream-card-pill"
+                        onclick={() => handleTimelineReaction(item.event, r.emoji)}
+                        title={r.emoji}
+                      >
+                        <i class="fa {EMOJI_ICONS[r.emoji] ?? 'fa-smile-o'}"></i>
+                        <span class="pill-count">{r.count}</span>
+                      </button>
+                    {/each}
                   </div>
                 {/if}
-                <div class="stream-body">
-                  <span><strong>{item.event.author.login}</strong> {item.event.action}</span>
-                  <span class="stream-time">{formatTimestamp(item.event.createdAt)}</span>
+                <div class="stream-card-actions">
+                  <button class="stream-action-btn" onclick={() => document.querySelector('.review-form-anchor')?.scrollIntoView({ behavior: 'smooth' })}>
+                    <i class="fa fa-reply"></i> Reply
+                  </button>
+                  {#if item.event.commentID}
+                    <div class="picker-anchor">
+                      <button class="stream-action-btn" title="Add reaction" onclick={() => reactionPickerOpen = reactionPickerOpen === item.event.commentID ? null : (item.event.commentID ?? null)}>
+                        <i class="fa fa-plus"></i>
+                      </button>
+                      {#if reactionPickerOpen === item.event.commentID}
+                        <ReactionPicker
+                          onPick={(emoji) => handleTimelineReaction(item.event, emoji)}
+                          onClose={() => reactionPickerOpen = null}
+                        />
+                      {/if}
+                    </div>
+                  {/if}
                 </div>
-                {#if item.event.body}
-                  <div class="stream-content">{@html item.event.body}</div>
-                {/if}
+              </div>
+            {:else}
+              <div class="stream-status">
+                <div class="stream-icon" style="background:{item.event.iconColor === 'green' ? 'var(--green)' : item.event.iconColor === 'red' ? 'var(--red)' : item.event.iconColor === 'blue' ? 'var(--blue)' : item.event.iconColor === 'violet' ? 'var(--violet)' : 'var(--text-muted)'}">
+                  <i class="fa {item.event.iconClass}"></i>
+                </div>
+                <div class="stream-status-body">
+                  <span><strong>{item.event.author.login}</strong> {item.event.action}</span>
+                  <span class="stream-status-time">{formatTimestamp(item.event.createdAt)}</span>
+                </div>
               </div>
             {/if}
           {/each}
@@ -534,6 +624,7 @@
     />
   {/if}
 
+  <div class="review-form-anchor"></div>
   <ReviewForm {owner} {repo} {number} merged={pr.merged} prState={pr.state} authorLogin={pr.author.login} approved={isApproved} />
 </FormationView>
 
@@ -678,70 +769,142 @@
 
   /* Comment stream */
   .comment-stream {
-    padding: 10px 12px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
 
-  .stream-event {
+  /* Card-style timeline events (with body) */
+  .stream-card {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--bg-card);
+  }
+
+  .stream-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    background: var(--bg-card-header);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .stream-card-meta strong {
+    color: var(--text);
+  }
+  .stream-card-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+  }
+  .stream-card-action {
+    color: var(--text-muted);
+  }
+  .stream-card-time {
+    color: var(--text-muted);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  .stream-card-body {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+    overflow-wrap: break-word;
+  }
+
+  .stream-card-reactions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-subtle);
-    align-items: flex-start;
-  }
-  .stream-event:last-child {
-    border-bottom: none;
+    gap: 4px;
+    padding: 0 12px 8px;
   }
 
-  .stream-avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    flex-shrink: 0;
+  .stream-card-pill {
+    all: unset;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .stream-card-pill:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+  }
+  .pill-count {
+    font-weight: 600;
+  }
+
+  .stream-card-actions {
+    padding: 6px 12px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .picker-anchor {
+    position: relative;
+    margin-left: auto;
+  }
+
+  .stream-action-btn {
+    all: unset;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .stream-action-btn:hover {
+    color: var(--text-link);
+  }
+
+  /* Compact status events (no body) */
+  .stream-status {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 4px 0;
   }
 
   .stream-icon {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     color: #fff;
-    font-size: 12px;
+    font-size: 11px;
   }
 
-  .stream-body {
+  .stream-status-body {
     flex: 1;
     font-size: 13px;
     display: flex;
-    align-items: baseline;
-    gap: 8px;
-    min-height: 28px;
     align-items: center;
+    gap: 8px;
   }
 
-  .stream-time {
+  .stream-status-time {
     font-size: 12px;
     color: var(--text-muted);
     margin-left: auto;
     white-space: nowrap;
-  }
-
-  .stream-content {
-    width: 100%;
-    background: var(--bg-subtle);
-    border: 1px solid var(--border-subtle);
-    border-radius: 4px;
-    padding: 10px 12px;
-    font-size: 13px;
-    line-height: 1.5;
-    overflow-wrap: break-word;
-    margin-left: 38px;
   }
 
   .interdiff-indicator {

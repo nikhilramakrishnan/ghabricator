@@ -129,6 +129,9 @@ export interface APITimelineEvent {
   createdAt: string;
   iconClass: string;
   iconColor: string;
+  commentID?: number;
+  commentType?: string;
+  reactions?: APIReaction[];
 }
 
 export interface APIHeraldAction {

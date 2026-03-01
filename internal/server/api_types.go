@@ -127,10 +127,11 @@ type APIReview struct {
 }
 
 type APIIssueComment struct {
-	ID        int64     `json:"id"`
-	Author    APIUser   `json:"author"`
-	Body      string    `json:"body"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID        int64         `json:"id"`
+	Author    APIUser       `json:"author"`
+	Body      string        `json:"body"`
+	CreatedAt time.Time     `json:"createdAt"`
+	Reactions []APIReaction `json:"reactions,omitempty"`
 }
 
 type APICheckRun struct {
@@ -144,12 +145,15 @@ type APICheckRun struct {
 }
 
 type APITimelineEvent struct {
-	Author    APIUser   `json:"author"`
-	Action    string    `json:"action"`
-	Body      string    `json:"body,omitempty"`
-	CreatedAt time.Time `json:"createdAt"`
-	IconClass string    `json:"iconClass"`
-	IconColor string    `json:"iconColor"`
+	Author      APIUser       `json:"author"`
+	Action      string        `json:"action"`
+	Body        string        `json:"body,omitempty"`
+	CreatedAt   time.Time     `json:"createdAt"`
+	IconClass   string        `json:"iconClass"`
+	IconColor   string        `json:"iconColor"`
+	CommentID   int64         `json:"commentID,omitempty"`
+	CommentType string        `json:"commentType,omitempty"`
+	Reactions   []APIReaction `json:"reactions,omitempty"`
 }
 
 type APIHeraldMatch struct {
@@ -214,10 +218,11 @@ type APICloseRequest struct {
 // --- Reaction API types ---
 
 type APIReactionRequest struct {
-	Owner     string `json:"owner"`
-	Repo      string `json:"repo"`
-	CommentID int64  `json:"commentID"`
-	Content   string `json:"content"` // +1, -1, laugh, confused, heart, hooray, rocket, eyes
+	Owner       string `json:"owner"`
+	Repo        string `json:"repo"`
+	CommentID   int64  `json:"commentID"`
+	Content     string `json:"content"`     // +1, -1, laugh, confused, heart, hooray, rocket, eyes
+	CommentType string `json:"commentType"` // "issue" or "review"
 }
 
 // --- Repos API types ---

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import type { APIReaction } from '$lib/types';
+
   export type TimelineEvent = {
     author: { login: string; avatarURL?: string };
     action: string;
@@ -6,6 +8,9 @@
     createdAt: string;
     iconClass: string;
     iconColor: string;
+    commentID?: number;
+    commentType?: string;
+    reactions?: APIReaction[];
   };
 
   import { formatTimestamp } from '$lib/time';

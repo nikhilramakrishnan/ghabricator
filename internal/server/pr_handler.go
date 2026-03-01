@@ -17,12 +17,15 @@ import (
 
 // timelineEvent is a unified event for the PR activity timeline.
 type timelineEvent struct {
-	Author    ghapi.User
-	Action    string // "approved this revision", "requested changes to this revision", "added a comment", etc.
-	Body      string
-	CreatedAt time.Time
-	IconClass string // FA icon class
-	IconColor string // CSS color class
+	Author      ghapi.User
+	Action      string // "approved this revision", "requested changes to this revision", "added a comment", etc.
+	Body        string
+	CreatedAt   time.Time
+	IconClass   string // FA icon class
+	IconColor   string // CSS color class
+	CommentID   int64
+	CommentType string // "issue" or "review"
+	Reactions   []APIReaction
 }
 
 func buildTimeline(pr *ghapi.PullRequest, reviews []ghapi.Review, issueComments []ghapi.IssueComment) []timelineEvent {
@@ -74,14 +77,36 @@ func buildTimeline(pr *ghapi.PullRequest, reviews []ghapi.Review, issueComments 
 
 	// Issue comments.
 	for _, c := range issueComments {
-		events = append(events, timelineEvent{
-			Author:    c.Author,
-			Action:    "added a comment",
-			Body:      c.Body,
-			CreatedAt: c.CreatedAt,
-			IconClass: "fa-comment",
-			IconColor: "blue",
-		})
+		ev := timelineEvent{
+			Author:      c.Author,
+			Action:      "added a comment",
+			Body:        c.Body,
+			CreatedAt:   c.CreatedAt,
+			IconClass:   "fa-comment",
+			IconColor:   "blue",
+			CommentID:   c.ID,
+			CommentType: "issue",
+		}
+		if c.Reactions != nil {
+			for _, pair := range []struct {
+				emoji string
+				count int
+			}{
+				{"+1", c.Reactions.PlusOne},
+				{"-1", c.Reactions.MinusOne},
+				{"laugh", c.Reactions.Laugh},
+				{"confused", c.Reactions.Confused},
+				{"heart", c.Reactions.Heart},
+				{"hooray", c.Reactions.Hooray},
+				{"rocket", c.Reactions.Rocket},
+				{"eyes", c.Reactions.Eyes},
+			} {
+				if pair.count > 0 {
+					ev.Reactions = append(ev.Reactions, APIReaction{Emoji: pair.emoji, Count: pair.count})
+				}
+			}
+		}
+		events = append(events, ev)
 	}
 
 	// Merged event.
@@ -281,12 +306,32 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 	// Build issue comments.
 	apiIssueComments := make([]APIIssueComment, 0, len(issueComments))
 	for _, ic := range issueComments {
-		apiIssueComments = append(apiIssueComments, APIIssueComment{
+		aic := APIIssueComment{
 			ID:        ic.ID,
 			Author:    APIUser{Login: ic.Author.Login, AvatarURL: ic.Author.AvatarURL},
 			Body:      ic.Body,
 			CreatedAt: ic.CreatedAt,
-		})
+		}
+		if ic.Reactions != nil {
+			for _, pair := range []struct {
+				emoji string
+				count int
+			}{
+				{"+1", ic.Reactions.PlusOne},
+				{"-1", ic.Reactions.MinusOne},
+				{"laugh", ic.Reactions.Laugh},
+				{"confused", ic.Reactions.Confused},
+				{"heart", ic.Reactions.Heart},
+				{"hooray", ic.Reactions.Hooray},
+				{"rocket", ic.Reactions.Rocket},
+				{"eyes", ic.Reactions.Eyes},
+			} {
+				if pair.count > 0 {
+					aic.Reactions = append(aic.Reactions, APIReaction{Emoji: pair.emoji, Count: pair.count})
+				}
+			}
+		}
+		apiIssueComments = append(apiIssueComments, aic)
 	}
 
 	// Build check runs.
@@ -308,12 +353,15 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 	apiTimeline := make([]APITimelineEvent, 0, len(events))
 	for _, ev := range events {
 		apiTimeline = append(apiTimeline, APITimelineEvent{
-			Author:    APIUser{Login: ev.Author.Login, AvatarURL: ev.Author.AvatarURL},
-			Action:    ev.Action,
-			Body:      remarkup.Render(ev.Body),
-			CreatedAt: ev.CreatedAt,
-			IconClass: ev.IconClass,
-			IconColor: ev.IconColor,
+			Author:      APIUser{Login: ev.Author.Login, AvatarURL: ev.Author.AvatarURL},
+			Action:      ev.Action,
+			Body:        remarkup.Render(ev.Body),
+			CreatedAt:   ev.CreatedAt,
+			IconClass:   ev.IconClass,
+			IconColor:   ev.IconColor,
+			CommentID:   ev.CommentID,
+			CommentType: ev.CommentType,
+			Reactions:   ev.Reactions,
 		})
 	}
 

@@ -89,6 +89,7 @@ type IssueComment struct {
 	Author    User
 	Body      string
 	CreatedAt time.Time
+	Reactions *ReactionSummary
 }
 
 type Gist struct {
