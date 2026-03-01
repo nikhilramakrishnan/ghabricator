@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Breadcrumbs, FormationView } from '$lib/components/layout';
+  import { Breadcrumbs } from '$lib/components/layout';
   import { Box, HeaderView, Tag } from '$lib/components/phui';
   import { DiffTable, ChangesetHeader, CommitHistory, FileTree, InlineCommentWithContext, ReactionPicker } from '$lib/components/diff';
   import type { APIReviewComment as DiffComment, APIDiffRow } from '$lib/components/diff';
@@ -78,6 +78,7 @@
 
   // Active file path for file tree highlighting
   let activePath = $state('');
+  let fileTreeOpen = $state(false);
 
   function scrollToChangeset(path: string) {
     activePath = path;
@@ -406,11 +407,7 @@
   </h1>
 </div>
 
-<FormationView>
-  {#snippet filetree()}
-    <FileTree changesets={displayChangesets} activeFile={activePath} commentCounts={Object.fromEntries(Object.entries(commentsByPath).map(([k, v]) => [k, v.length]))} />
-  {/snippet}
-
+<div class="pr-content">
   <!-- Revision Contents — Phabricator-style property card -->
   <Box border>
     <HeaderView title={S.pr.revisionContents} icon="fa-file-text-o" />
@@ -626,9 +623,33 @@
 
   <div class="review-form-anchor"></div>
   <ReviewForm {owner} {repo} {number} merged={pr.merged} prState={pr.state} authorLogin={pr.author.login} approved={isApproved} />
-</FormationView>
+</div>
+
+<!-- Docked file tree widget -->
+{#if displayChangesets.length > 0}
+  <div class="file-dock" class:open={fileTreeOpen}>
+    <button class="file-dock-tab" onclick={() => fileTreeOpen = !fileTreeOpen}>
+      <i class="fa {fileTreeOpen ? 'fa-chevron-down' : 'fa-sitemap'}"></i>
+      <span>Files</span>
+      <span class="file-dock-count">{displayChangesets.length}</span>
+    </button>
+    {#if fileTreeOpen}
+      <div class="file-dock-panel">
+        <FileTree
+          changesets={displayChangesets}
+          activeFile={activePath}
+          commentCounts={Object.fromEntries(Object.entries(commentsByPath).map(([k, v]) => [k, v.length]))}
+        />
+      </div>
+    {/if}
+  </div>
+{/if}
 
 <style>
+  .pr-content {
+    padding: 0 16px;
+  }
+
   .pr-page-header {
     padding: 0 16px;
   }
@@ -926,5 +947,59 @@
     text-align: center;
     font-size: 13px;
     color: var(--text-muted);
+  }
+
+  /* Docked file tree widget */
+  .file-dock {
+    position: fixed;
+    bottom: 0;
+    left: 220px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .file-dock-tab {
+    all: unset;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+  }
+  .file-dock-tab:hover {
+    background: var(--bg-hover);
+  }
+  .file-dock-tab i {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .file-dock-count {
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+  }
+
+  .file-dock-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 0 6px 0 0;
+    width: 320px;
+    max-height: 60vh;
+    overflow-y: auto;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
   }
 </style>
