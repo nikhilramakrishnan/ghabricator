@@ -41,6 +41,7 @@ export interface APIPRDetail {
   number: number;
   title: string;
   body: string;
+  bodyRaw?: string;
   state: string;
   draft: boolean;
   merged: boolean;
@@ -126,6 +127,7 @@ export interface APITimelineEvent {
   author: APIUser;
   action: string;
   body?: string;
+  bodyRaw?: string;
   createdAt: string;
   iconClass: string;
   iconColor: string;

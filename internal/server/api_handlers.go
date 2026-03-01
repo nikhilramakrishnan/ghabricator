@@ -294,6 +294,54 @@ func (s *Server) handleAPIReaction(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, map[string]bool{"ok": true})
 }
 
+// --- Edit PR / Comment APIs ---
+
+func (s *Server) handleAPIEditPR(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Owner  string `json:"owner"`
+		Repo   string `json:"repo"`
+		Number int    `json:"number"`
+		Body   string `json:"body"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, "bad json", http.StatusBadRequest)
+		return
+	}
+	if req.Owner == "" || req.Repo == "" || req.Number == 0 {
+		jsonError(w, "missing owner/repo/number", http.StatusBadRequest)
+		return
+	}
+	client := auth.GitHubClientFromContext(r.Context())
+	if err := ghapi.EditPRBody(r.Context(), client, req.Owner, req.Repo, req.Number, req.Body); err != nil {
+		jsonError(w, fmt.Sprintf("edit PR: %v", err), http.StatusBadGateway)
+		return
+	}
+	jsonOK(w, map[string]bool{"ok": true})
+}
+
+func (s *Server) handleAPIEditComment(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Owner     string `json:"owner"`
+		Repo      string `json:"repo"`
+		CommentID int64  `json:"commentID"`
+		Body      string `json:"body"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, "bad json", http.StatusBadRequest)
+		return
+	}
+	if req.Owner == "" || req.Repo == "" || req.CommentID == 0 || req.Body == "" {
+		jsonError(w, "missing owner/repo/commentID/body", http.StatusBadRequest)
+		return
+	}
+	client := auth.GitHubClientFromContext(r.Context())
+	if err := ghapi.EditIssueComment(r.Context(), client, req.Owner, req.Repo, req.CommentID, req.Body); err != nil {
+		jsonError(w, fmt.Sprintf("edit comment: %v", err), http.StatusBadGateway)
+		return
+	}
+	jsonOK(w, map[string]bool{"ok": true})
+}
+
 // --- Task 8: Repos API ---
 
 func (s *Server) handleAPIRepos(w http.ResponseWriter, r *http.Request) {

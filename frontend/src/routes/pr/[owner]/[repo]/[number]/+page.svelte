@@ -9,6 +9,9 @@
   import { formatTimestamp } from '$lib/time';
   import { addDraft, addReplyDraft } from '$lib/stores/inline';
   import { fileTreeData } from '$lib/stores/filetree';
+  import { user } from '$lib/stores/auth';
+  import { MarkdownEditor } from '$lib/components/editor';
+  import { marked } from 'marked';
   import { onDestroy } from 'svelte';
   import type {
     APIPRDetailResponse, APIChangeset, APIReviewComment,
@@ -402,6 +405,47 @@
     reactionPickerOpen = null;
   }
 
+  // --- Edit state ---
+  let editingSummary = $state(false);
+  let summaryDraft = $state('');
+  let savingSummary = $state(false);
+  let editingCommentId = $state<number | null>(null);
+  let commentDraft = $state('');
+  let savingComment = $state(false);
+
+  function startEditSummary() {
+    summaryDraft = pr.bodyRaw ?? '';
+    editingSummary = true;
+  }
+
+  async function saveSummary() {
+    savingSummary = true;
+    try {
+      await apiPost('/api/v2/edit-pr', { owner, repo, number, body: summaryDraft });
+      pr.body = marked.parse(summaryDraft, { async: false }) as string;
+      pr.bodyRaw = summaryDraft;
+      editingSummary = false;
+    } catch { /* silent */ }
+    savingSummary = false;
+  }
+
+  function startEditComment(ev: TimelineEvent) {
+    commentDraft = ev.bodyRaw ?? '';
+    editingCommentId = ev.commentID ?? null;
+  }
+
+  async function saveComment(ev: TimelineEvent) {
+    if (!ev.commentID) return;
+    savingComment = true;
+    try {
+      await apiPost('/api/v2/edit-comment', { owner, repo, commentID: ev.commentID, body: commentDraft });
+      ev.body = marked.parse(commentDraft, { async: false }) as string;
+      ev.bodyRaw = commentDraft;
+      editingCommentId = null;
+    } catch { /* silent */ }
+    savingComment = false;
+  }
+
   let crumbs = $derived([
     { name: S.crumb.home, href: '/' },
     { name: S.revisions.title, href: '/dashboard' },
@@ -480,10 +524,29 @@
       {/if}
     </div>
 
-    {#if pr.body?.trim()}
+    {#if editingSummary}
       <div class="summary-section">
-        <div class="remarkup-content">
-          {@html pr.body}
+        <MarkdownEditor bind:value={summaryDraft} minRows={6} autofocus />
+        <div class="edit-actions">
+          <button class="edit-btn save" onclick={saveSummary} disabled={savingSummary}>
+            <i class="fa fa-check"></i> {savingSummary ? 'Saving...' : 'Save'}
+          </button>
+          <button class="edit-btn cancel" onclick={() => editingSummary = false}>
+            <i class="fa fa-times"></i> Cancel
+          </button>
+        </div>
+      </div>
+    {:else}
+      <div class="summary-section">
+        {#if pr.body?.trim()}
+          <div class="remarkup-content">
+            {@html pr.body}
+          </div>
+        {/if}
+        <div class="summary-edit-row">
+          <button class="summary-edit-link" onclick={startEditSummary}>
+            <i class="fa fa-pencil"></i> Edit Summary
+          </button>
         </div>
       </div>
     {/if}
@@ -540,27 +603,46 @@
                   <span class="stream-card-action">{item.event.action}</span>
                   <span class="stream-card-time">{formatTimestamp(item.event.createdAt)}</span>
                 </div>
-                <div class="stream-card-body">
-                  {@html item.event.body}
-                </div>
-                {#if reactions.length > 0}
-                  <div class="stream-card-reactions">
-                    {#each reactions as r}
-                      <button
-                        class="stream-card-pill"
-                        onclick={() => handleTimelineReaction(item.event, r.emoji)}
-                        title={r.emoji}
-                      >
-                        <i class="fa {EMOJI_ICONS[r.emoji] ?? 'fa-smile-o'}"></i>
-                        <span class="pill-count">{r.count}</span>
+                {#if editingCommentId === item.event.commentID}
+                  <div class="stream-card-edit">
+                    <MarkdownEditor bind:value={commentDraft} minRows={4} autofocus />
+                    <div class="edit-actions">
+                      <button class="edit-btn save" onclick={() => saveComment(item.event)} disabled={savingComment}>
+                        <i class="fa fa-check"></i> {savingComment ? 'Saving...' : 'Save'}
                       </button>
-                    {/each}
+                      <button class="edit-btn cancel" onclick={() => editingCommentId = null}>
+                        <i class="fa fa-times"></i> Cancel
+                      </button>
+                    </div>
                   </div>
+                {:else}
+                  <div class="stream-card-body">
+                    {@html item.event.body}
+                  </div>
+                  {#if reactions.length > 0}
+                    <div class="stream-card-reactions">
+                      {#each reactions as r}
+                        <button
+                          class="stream-card-pill"
+                          onclick={() => handleTimelineReaction(item.event, r.emoji)}
+                          title={r.emoji}
+                        >
+                          <i class="fa {EMOJI_ICONS[r.emoji] ?? 'fa-smile-o'}"></i>
+                          <span class="pill-count">{r.count}</span>
+                        </button>
+                      {/each}
+                    </div>
+                  {/if}
                 {/if}
                 <div class="stream-card-actions">
                   <button class="stream-action-btn" onclick={() => document.querySelector('.review-form-anchor')?.scrollIntoView({ behavior: 'smooth' })}>
                     <i class="fa fa-reply"></i> Reply
                   </button>
+                  {#if item.event.commentID && item.event.bodyRaw !== undefined}
+                    <button class="stream-action-btn" onclick={() => startEditComment(item.event)}>
+                      <i class="fa fa-pencil"></i> Edit
+                    </button>
+                  {/if}
                   {#if item.event.commentID}
                     <div class="picker-anchor">
                       <button class="stream-action-btn" title="Add reaction" onclick={() => reactionPickerOpen = reactionPickerOpen === item.event.commentID ? null : (item.event.commentID ?? null)}>
@@ -881,6 +963,54 @@
     gap: 4px;
   }
   .stream-action-btn:hover {
+    color: var(--text-link);
+  }
+
+  .stream-card-edit {
+    padding: 8px 12px;
+  }
+
+  .edit-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .edit-btn {
+    all: unset;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .edit-btn.save {
+    background: var(--blue);
+    color: #fff;
+  }
+  .edit-btn.save:hover { opacity: 0.9; }
+  .edit-btn.save:disabled { opacity: 0.5; cursor: default; }
+  .edit-btn.cancel {
+    color: var(--text-muted);
+  }
+  .edit-btn.cancel:hover { color: var(--text); }
+
+  .summary-edit-row {
+    padding: 4px 12px 8px;
+  }
+  .summary-edit-link {
+    all: unset;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .summary-edit-link:hover {
     color: var(--text-link);
   }
 

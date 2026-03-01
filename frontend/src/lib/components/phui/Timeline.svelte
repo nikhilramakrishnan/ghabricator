@@ -5,6 +5,7 @@
     author: { login: string; avatarURL?: string };
     action: string;
     body?: string;
+    bodyRaw?: string;
     createdAt: string;
     iconClass: string;
     iconColor: string;

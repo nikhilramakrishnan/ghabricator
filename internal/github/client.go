@@ -457,6 +457,18 @@ func FetchCompare(ctx context.Context, client *gh.Client, owner, repo, base, hea
 	return string(body), nil
 }
 
+// EditPRBody updates the body of a pull request.
+func EditPRBody(ctx context.Context, client *gh.Client, owner, repo string, number int, body string) error {
+	_, _, err := client.PullRequests.Edit(ctx, owner, repo, number, &gh.PullRequest{Body: gh.Ptr(body)})
+	return err
+}
+
+// EditIssueComment updates the body of an issue comment.
+func EditIssueComment(ctx context.Context, client *gh.Client, owner, repo string, commentID int64, body string) error {
+	_, _, err := client.Issues.EditComment(ctx, owner, repo, commentID, &gh.IssueComment{Body: gh.Ptr(body)})
+	return err
+}
+
 // SubmitReview submits a pull request review.
 func SubmitReview(ctx context.Context, client *gh.Client, owner, repo string, number int, event, body string, comments []InlineCommentRequest) (*Review, error) {
 	var reviewComments []*gh.DraftReviewComment

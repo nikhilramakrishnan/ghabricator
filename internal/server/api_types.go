@@ -56,6 +56,7 @@ type APIPRDetail struct {
 	Number       int        `json:"number"`
 	Title        string     `json:"title"`
 	Body         string     `json:"body"`
+	BodyRaw      string     `json:"bodyRaw,omitempty"`
 	State        string     `json:"state"`
 	Draft        bool       `json:"draft"`
 	Merged       bool       `json:"merged"`
@@ -105,6 +106,7 @@ type APIReviewComment struct {
 	ID        int64              `json:"id"`
 	Author    APIUser            `json:"author"`
 	Body      string             `json:"body"`
+	BodyRaw   string             `json:"bodyRaw,omitempty"`
 	Path      string             `json:"path"`
 	Line      int                `json:"line"`
 	Side      string             `json:"side"`
@@ -148,6 +150,7 @@ type APITimelineEvent struct {
 	Author      APIUser       `json:"author"`
 	Action      string        `json:"action"`
 	Body        string        `json:"body,omitempty"`
+	BodyRaw     string        `json:"bodyRaw,omitempty"`
 	CreatedAt   time.Time     `json:"createdAt"`
 	IconClass   string        `json:"iconClass"`
 	IconColor   string        `json:"iconColor"`
