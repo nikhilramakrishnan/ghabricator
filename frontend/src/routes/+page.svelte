@@ -32,88 +32,114 @@
 
 {#if !$user}
   <div class="landing">
-    <!-- Hero -->
-    <section class="hero">
-      <h1 class="hero-title">Code review that doesn't suck.</h1>
-      <p class="hero-sub">Phabricator's legendary review workflow, powered by your GitHub repos. No migration, no lock-in.</p>
-      <a href="/api/auth/github" class="cta">
-        <i class="fa fa-github"></i> Sign in with GitHub
-      </a>
-    </section>
-
-    <!-- Diff preview -->
-    <section class="preview">
-      <div class="preview-window">
-        <div class="preview-bar">
-          <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-          <span class="preview-path">src/auth/session.go</span>
+    <!-- Welcome box -->
+    <div class="l-box">
+      <div class="l-header">
+        <i class="fa fa-code-fork l-header-icon"></i>
+        <span class="l-header-title">Ghabricator</span>
+        <span class="l-tag green">GitHub-powered</span>
+      </div>
+      <div class="l-welcome">
+        <div class="l-welcome-text">
+          <h1>Code review that doesn't suck.</h1>
+          <p>Phabricator's review workflow on top of your GitHub repos. Side-by-side diffs, inline comments, Herald automation — no migration required.</p>
+          <a href="/api/auth/github" class="l-signin">
+            <i class="fa fa-github"></i> Sign in with GitHub
+          </a>
         </div>
-        <table class="diff-mock">
-          <tbody>
-            <tr class="ctx"><td class="ln">14</td><td class="ln">14</td><td class="code">func (s *Store) Get(id string) *Session {'{'}</td></tr>
-            <tr class="del"><td class="ln">15</td><td class="ln"></td><td class="code">-   sess, ok := s.cache[id]</td></tr>
-            <tr class="add"><td class="ln"></td><td class="ln">15</td><td class="code">+   sess, ok := s.sessions[id]</td></tr>
-            <tr class="ctx"><td class="ln">16</td><td class="ln">16</td><td class="code">    if !ok {'{'}</td></tr>
-            <tr class="ctx"><td class="ln">17</td><td class="ln">17</td><td class="code">        return nil</td></tr>
-            <tr class="ctx"><td class="ln">18</td><td class="ln">18</td><td class="code">    {'}'}</td></tr>
-            <tr class="add"><td class="ln"></td><td class="ln">19</td><td class="code">+   if time.Since(sess.CreatedAt) > sessionTTL {'{'}</td></tr>
-            <tr class="add"><td class="ln"></td><td class="ln">20</td><td class="code">+       return nil</td></tr>
-            <tr class="add"><td class="ln"></td><td class="ln">21</td><td class="code">+   {'}'}</td></tr>
-            <tr class="ctx"><td class="ln">19</td><td class="ln">22</td><td class="code">    return sess</td></tr>
-            <tr class="ctx"><td class="ln">20</td><td class="ln">23</td><td class="code">{'}'}</td></tr>
-          </tbody>
-        </table>
-        <div class="inline-mock">
-          <div class="inline-avatar">NR</div>
-          <div class="inline-body">
-            <span class="inline-author">nikhilr</span>
-            <span class="inline-text">Should we also evict expired sessions on write? This only catches reads.</span>
+      </div>
+    </div>
+
+    <!-- Diff preview box -->
+    <div class="l-box">
+      <div class="l-header">
+        <i class="fa fa-file-code-o l-header-icon"></i>
+        <span class="l-header-title">src/auth/session.go</span>
+        <span class="l-tag blue">+6 -1</span>
+      </div>
+      <table class="diff-mock">
+        <tbody>
+          <tr class="ctx"><td class="ln">14</td><td class="ln">14</td><td class="code">func (s *Store) Get(id string) *Session {'{'}</td></tr>
+          <tr class="del"><td class="ln">15</td><td class="ln"></td><td class="code">-   sess, ok := s.cache[id]</td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">15</td><td class="code">+   sess, ok := s.sessions[id]</td></tr>
+          <tr class="ctx"><td class="ln">16</td><td class="ln">16</td><td class="code">    if !ok {'{'}</td></tr>
+          <tr class="ctx"><td class="ln">17</td><td class="ln">17</td><td class="code">        return nil</td></tr>
+          <tr class="ctx"><td class="ln">18</td><td class="ln">18</td><td class="code">    {'}'}</td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">19</td><td class="code">+   if time.Since(sess.CreatedAt) > sessionTTL {'{'}</td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">20</td><td class="code">+       return nil</td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">21</td><td class="code">+   {'}'}</td></tr>
+          <tr class="ctx"><td class="ln">19</td><td class="ln">22</td><td class="code">    return sess</td></tr>
+          <tr class="ctx"><td class="ln">20</td><td class="ln">23</td><td class="code">{'}'}</td></tr>
+        </tbody>
+      </table>
+      <div class="l-inline">
+        <div class="l-inline-bar"></div>
+        <div class="l-inline-avatar">NR</div>
+        <div class="l-inline-body">
+          <span class="l-inline-author">nikhilr</span>
+          <span class="l-inline-time">just now</span>
+          <p>Should we also evict expired sessions on write? This only catches reads.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features box -->
+    <div class="l-box">
+      <div class="l-header">
+        <i class="fa fa-star l-header-icon"></i>
+        <span class="l-header-title">Features</span>
+      </div>
+      <div class="l-features">
+        <div class="l-feat-item">
+          <div class="l-feat-bar blue"></div>
+          <i class="fa fa-columns l-feat-icon"></i>
+          <div class="l-feat-content">
+            <div class="l-feat-name">Side-by-side diffs</div>
+            <div class="l-feat-desc">Syntax-highlighted, two-column diff viewer with context expansion</div>
+          </div>
+        </div>
+        <div class="l-feat-item">
+          <div class="l-feat-bar green"></div>
+          <i class="fa fa-commenting-o l-feat-icon"></i>
+          <div class="l-feat-content">
+            <div class="l-feat-name">Inline comments</div>
+            <div class="l-feat-desc">Click any line to comment. Drafts, threaded replies, batch reviews</div>
+          </div>
+        </div>
+        <div class="l-feat-item">
+          <div class="l-feat-bar violet"></div>
+          <i class="fa fa-bullhorn l-feat-icon"></i>
+          <div class="l-feat-content">
+            <div class="l-feat-name">Herald automation</div>
+            <div class="l-feat-desc">Auto-assign reviewers, add labels, post comments based on rules</div>
+          </div>
+        </div>
+        <div class="l-feat-item">
+          <div class="l-feat-bar orange"></div>
+          <i class="fa fa-search l-feat-icon"></i>
+          <div class="l-feat-content">
+            <div class="l-feat-name">Search everything</div>
+            <div class="l-feat-desc">PRs, issues, code, and repos across all your GitHub organizations</div>
+          </div>
+        </div>
+        <div class="l-feat-item">
+          <div class="l-feat-bar blue"></div>
+          <i class="fa fa-code l-feat-icon"></i>
+          <div class="l-feat-content">
+            <div class="l-feat-name">Repository browser</div>
+            <div class="l-feat-desc">Browse files, view blame, syntax highlighting — without leaving</div>
+          </div>
+        </div>
+        <div class="l-feat-item">
+          <div class="l-feat-bar green"></div>
+          <i class="fa fa-github l-feat-icon"></i>
+          <div class="l-feat-content">
+            <div class="l-feat-name">GitHub is the source of truth</div>
+            <div class="l-feat-desc">No database, no migration. Ghabricator is just a better lens</div>
           </div>
         </div>
       </div>
-    </section>
-
-    <!-- Features -->
-    <section class="features">
-      <div class="feature">
-        <div class="feature-icon"><i class="fa fa-columns"></i></div>
-        <h3>Side-by-side diffs</h3>
-        <p>Syntax-highlighted, two-column diff viewer with context expansion. The way diffs should be read.</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon"><i class="fa fa-commenting-o"></i></div>
-        <h3>Inline comments</h3>
-        <p>Click any line to comment. Draft comments, threaded replies, edit history. Ship reviews as a batch.</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon"><i class="fa fa-bullhorn"></i></div>
-        <h3>Herald automation</h3>
-        <p>Rules that auto-assign reviewers, add labels, or post comments based on file paths, authors, or branches.</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon"><i class="fa fa-search"></i></div>
-        <h3>Search everything</h3>
-        <p>Search PRs, issues, code, and repos across all your GitHub organizations. One search bar, instant results.</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon"><i class="fa fa-code"></i></div>
-        <h3>Repository browser</h3>
-        <p>Browse files, view blame, syntax-highlighted source — without leaving the review tool.</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon"><i class="fa fa-github"></i></div>
-        <h3>GitHub is the source of truth</h3>
-        <p>No database, no migration. Your repos, PRs, and comments live on GitHub. Ghabricator is just a better lens.</p>
-      </div>
-    </section>
-
-    <!-- Bottom CTA -->
-    <section class="bottom-cta">
-      <a href="/api/auth/github" class="cta">
-        <i class="fa fa-github"></i> Get started
-      </a>
-      <p class="bottom-note">Connects to your existing GitHub account.</p>
-    </section>
+    </div>
   </div>
 {:else}
   <PageShell title={S.dashboard.title} icon="fa-home">
@@ -215,86 +241,95 @@
 {/if}
 
 <style>
-  /* ===== Landing page ===== */
+  /* ===== Landing page — PHUI style ===== */
   .landing {
-    max-width: 960px;
+    max-width: 780px;
     margin: 0 auto;
-    padding: 0 24px 80px;
+    padding: 16px 16px 48px;
   }
 
-  /* Hero */
-  .hero {
-    text-align: center;
-    padding: 72px 0 48px;
+  /* Box — mirrors PHUI Box */
+  .l-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    overflow: hidden;
   }
-  .hero-title {
-    font-size: 40px;
-    font-weight: 800;
-    margin: 0 0 16px;
-    color: var(--text);
-    letter-spacing: -0.5px;
-    line-height: 1.15;
+
+  /* Header bar — mirrors PHUI HeaderView */
+  .l-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--bg-card-header);
+    border-bottom: 1px solid var(--border-subtle);
   }
-  .hero-sub {
-    font-size: 17px;
+  .l-header-icon {
+    font-size: 14px;
     color: var(--text-muted);
-    margin: 0 auto 32px;
-    max-width: 540px;
-    line-height: 1.6;
   }
-  .cta {
+  .l-header-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* Tag — mirrors PHUI Tag */
+  .l-tag {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 22px;
+    padding: 0 8px;
+    border-radius: 3px;
+    margin-left: auto;
+  }
+  .l-tag.green {
+    background: var(--tag-green-bg);
+    color: var(--tag-green-text);
+  }
+  .l-tag.blue {
+    background: var(--tag-blue-bg);
+    color: var(--tag-blue-text);
+  }
+
+  /* Welcome content */
+  .l-welcome {
+    padding: 32px 24px;
+  }
+  .l-welcome h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .l-welcome p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0 0 24px;
+    max-width: 520px;
+  }
+  .l-signin {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     background: var(--green);
     color: var(--text-on-dark);
-    font-size: 16px;
-    font-weight: 700;
-    padding: 12px 32px;
-    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 20px;
+    border-radius: 3px;
     text-decoration: none;
-    transition: background 0.15s;
   }
-  .cta:hover {
+  .l-signin:hover {
     background: var(--green-hover);
     text-decoration: none;
   }
 
-  /* Diff preview */
-  .preview {
-    margin: 0 auto 64px;
-    max-width: 680px;
-  }
-  .preview-window {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-  }
-  .preview-bar {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 14px;
-    background: var(--bg-card-header);
-    border-bottom: 1px solid var(--border-subtle);
-  }
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-  .dot.red { background: #ff5f57; }
-  .dot.yellow { background: #febc2e; }
-  .dot.green { background: #28c840; }
-  .preview-path {
-    margin-left: 8px;
-    font-size: 12px;
-    font-family: var(--font-mono);
-    color: var(--text-muted);
-  }
-
+  /* Diff mock */
   .diff-mock {
     width: 100%;
     border-collapse: collapse;
@@ -314,25 +349,32 @@
     user-select: none;
     padding: 0 8px;
   }
-  .diff-mock .code {
-    width: 100%;
-  }
+  .diff-mock .code { width: 100%; }
   .diff-mock .ctx { background: transparent; }
   .diff-mock .add { background: var(--diff-add-bg); }
   .diff-mock .add .ln { background: var(--diff-add-num-bg); }
   .diff-mock .del { background: var(--diff-del-bg); }
   .diff-mock .del .ln { background: var(--diff-del-num-bg); }
 
-  .inline-mock {
+  /* Inline comment — mirrors Timeline event */
+  .l-inline {
     display: flex;
     gap: 10px;
-    padding: 12px 14px;
+    padding: 10px 12px;
     border-top: 1px solid var(--border-subtle);
-    background: var(--bg-subtle);
+    position: relative;
   }
-  .inline-avatar {
-    width: 28px;
-    height: 28px;
+  .l-inline-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--blue);
+  }
+  .l-inline-avatar {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: var(--blue);
     color: #fff;
@@ -343,56 +385,70 @@
     justify-content: center;
     flex-shrink: 0;
   }
-  .inline-body {
+  .l-inline-body {
     font-size: 13px;
     line-height: 1.5;
-    color: var(--text);
+    min-width: 0;
   }
-  .inline-author {
-    font-weight: 700;
+  .l-inline-author {
+    font-weight: 600;
+    color: var(--text);
     margin-right: 6px;
   }
-  .inline-text {
+  .l-inline-time {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .l-inline-body p {
+    margin: 4px 0 0;
     color: var(--text-muted);
   }
 
-  /* Features grid */
-  .features {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 32px;
-    margin-bottom: 64px;
+  /* Features list — mirrors ObjectItemList */
+  .l-features {
+    /* no extra padding, items handle it */
   }
-  .feature {
-    text-align: center;
+  .l-feat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    position: relative;
   }
-  .feature-icon {
-    font-size: 28px;
-    color: var(--blue);
-    margin-bottom: 12px;
+  .l-feat-item:last-child {
+    border-bottom: none;
   }
-  .feature h3 {
-    font-size: 15px;
-    font-weight: 700;
-    margin: 0 0 8px;
-    color: var(--text);
+  .l-feat-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
   }
-  .feature p {
-    font-size: 13px;
+  .l-feat-bar.blue { background: var(--blue); }
+  .l-feat-bar.green { background: var(--green); }
+  .l-feat-bar.violet { background: var(--violet); }
+  .l-feat-bar.orange { background: var(--orange); }
+  .l-feat-icon {
+    font-size: 14px;
     color: var(--text-muted);
-    line-height: 1.6;
-    margin: 0;
-  }
-
-  /* Bottom CTA */
-  .bottom-cta {
+    width: 18px;
     text-align: center;
-    padding: 24px 0;
+    flex-shrink: 0;
   }
-  .bottom-note {
-    margin: 16px 0 0;
-    font-size: 13px;
+  .l-feat-content {
+    min-width: 0;
+  }
+  .l-feat-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-link);
+  }
+  .l-feat-desc {
+    font-size: 12px;
     color: var(--text-muted);
+    margin-top: 1px;
   }
 
   .dashboard-grid {
