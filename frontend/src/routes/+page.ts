@@ -6,7 +6,7 @@ import type { APIDashboardResponse, APIWorkflowRunsResponse } from '$lib/types';
 export const load: PageLoad = async () => {
   let loggedIn = false;
   try {
-    await apiFetch<AuthUser>('/api/auth/me');
+    await apiFetch<AuthUser>('/api/auth/me', { noRedirect: true });
     loggedIn = true;
   } catch {
     // not logged in — show landing page

@@ -219,7 +219,9 @@ func (h *AuthHandler) RequireAuth(next http.Handler) http.Handler {
 		} else {
 			sess = h.store.GetFromRequest(r)
 			if sess == nil {
-				http.Redirect(w, r, "/auth/github", http.StatusTemporaryRedirect)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte(`{"error":"not authenticated"}`))
 				return
 			}
 			client = gh.NewClient(h.config.Client(r.Context(), sess.Token))

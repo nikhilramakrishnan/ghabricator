@@ -1,7 +1,10 @@
-export async function apiFetch<T>(path: string, opts?: RequestInit): Promise<T> {
-  const res = await fetch(path, { credentials: 'include', ...opts });
+export async function apiFetch<T>(path: string, opts?: RequestInit & { noRedirect?: boolean }): Promise<T> {
+  const { noRedirect, ...fetchOpts } = opts ?? {};
+  const res = await fetch(path, { credentials: 'include', ...fetchOpts });
   if (res.status === 401) {
-    window.location.href = '/api/auth/github';
+    if (!noRedirect) {
+      window.location.href = '/api/auth/github';
+    }
     throw new Error('Unauthorized');
   }
   if (!res.ok) {

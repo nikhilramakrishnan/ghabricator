@@ -11,7 +11,7 @@ export const authLoading = writable(true);
 
 export async function checkAuth() {
   try {
-    const data = await apiFetch<AuthUser>('/api/auth/me');
+    const data = await apiFetch<AuthUser>('/api/auth/me', { noRedirect: true });
     user.set(data);
   } catch {
     user.set(null);
