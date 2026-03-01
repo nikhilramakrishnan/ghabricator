@@ -25,7 +25,7 @@
 
   function handleClickOutside(e: MouseEvent) {
     const target = e.target as HTMLElement;
-    if (!target.closest('.reaction-picker')) {
+    if (!target.closest('.reaction-picker') && !target.closest('.picker-anchor')) {
       onClose();
     }
   }

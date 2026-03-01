@@ -7,7 +7,7 @@
   import { apiFetch, apiPost } from '$lib/api';
   import { S } from '$lib/strings';
   import { formatTimestamp } from '$lib/time';
-  import { addDraft } from '$lib/stores/inline';
+  import { addDraft, addReplyDraft } from '$lib/stores/inline';
   import { fileTreeData } from '$lib/stores/filetree';
   import { onDestroy } from 'svelte';
   import type {
@@ -519,7 +519,7 @@
       <HeaderView title="Comments" icon="fa-comments" count={commentStream.length} collapsible collapsed={commentsCollapsed} onToggle={() => commentsCollapsed = !commentsCollapsed} />
       {#if !commentsCollapsed}
         <div class="comment-stream">
-          {#each commentStream as item}
+          {#each commentStream as item, idx}
             {#if item.type === 'inline'}
               <InlineCommentWithContext
                 comment={item.comment}
@@ -527,6 +527,7 @@
                 side={item.comment.side}
                 replies={repliesByRoot.get(item.comment.id) ?? []}
                 onNavigate={navigateToInline}
+                onReply={(c) => addReplyDraft(c.path, c.line, c.side, c.id)}
               />
             {:else if item.event.body}
               {@const reactions = getReactions(item.event)}
@@ -563,7 +564,7 @@
                   {#if item.event.commentID}
                     <div class="picker-anchor">
                       <button class="stream-action-btn" title="Add reaction" onclick={() => reactionPickerOpen = reactionPickerOpen === item.event.commentID ? null : (item.event.commentID ?? null)}>
-                        <i class="fa fa-plus"></i>
+                        <i class="fa fa-smile-o"></i>
                       </button>
                       {#if reactionPickerOpen === item.event.commentID}
                         <ReactionPicker
@@ -822,7 +823,7 @@
   }
 
   .stream-card-body {
-    padding: 8px 12px;
+    padding: 4px 12px;
     font-size: 13px;
     color: var(--text);
     line-height: 1.5;
@@ -868,7 +869,6 @@
 
   .picker-anchor {
     position: relative;
-    margin-left: auto;
   }
 
   .stream-action-btn {

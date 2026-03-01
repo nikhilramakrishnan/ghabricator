@@ -74,7 +74,7 @@
     {#if onReaction}
       <div class="picker-anchor">
         <button class="action-btn" title="Add reaction" onclick={() => pickerOpen = !pickerOpen}>
-          <i class="fa fa-plus mrs"></i>
+          <i class="fa fa-smile-o mrs"></i>
         </button>
         {#if pickerOpen}
           <ReactionPicker

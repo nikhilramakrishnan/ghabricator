@@ -353,6 +353,12 @@ func DeleteReviewComment(ctx context.Context, client *gh.Client, owner, repo str
 	return nil
 }
 
+// CreateIssueComment posts a top-level comment on a PR (not a review).
+func CreateIssueComment(ctx context.Context, client *gh.Client, owner, repo string, number int, body string) error {
+	_, _, err := client.Issues.CreateComment(ctx, owner, repo, number, &gh.IssueComment{Body: gh.Ptr(body)})
+	return err
+}
+
 // FetchIssueComments fetches top-level issue comments on a PR (not inline review comments).
 func FetchIssueComments(ctx context.Context, client *gh.Client, owner, repo string, number int) ([]IssueComment, error) {
 	opts := &gh.IssueListCommentsOptions{

@@ -185,10 +185,20 @@ func (s *Server) handleAPIReview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := auth.GitHubClientFromContext(r.Context())
-	_, err := ghapi.SubmitReview(r.Context(), client, req.Owner, req.Repo, req.Number, req.Action, req.Body, nil)
-	if err != nil {
-		jsonError(w, fmt.Sprintf("submit review: %v", err), http.StatusBadGateway)
-		return
+
+	// Plain comments go as issue comments so they get reaction support.
+	// Only use the review API for approve/request_changes or when there are inline drafts.
+	if req.Action == "COMMENT" && req.Body != "" {
+		if err := ghapi.CreateIssueComment(r.Context(), client, req.Owner, req.Repo, req.Number, req.Body); err != nil {
+			jsonError(w, fmt.Sprintf("create comment: %v", err), http.StatusBadGateway)
+			return
+		}
+	} else {
+		_, err := ghapi.SubmitReview(r.Context(), client, req.Owner, req.Repo, req.Number, req.Action, req.Body, nil)
+		if err != nil {
+			jsonError(w, fmt.Sprintf("submit review: %v", err), http.StatusBadGateway)
+			return
+		}
 	}
 	jsonOK(w, map[string]bool{"ok": true})
 }

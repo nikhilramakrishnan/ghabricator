@@ -19,13 +19,15 @@
     contextRows = [],
     side = 'RIGHT',
     replies = [],
-    onNavigate
+    onNavigate,
+    onReply
   }: {
     comment: APIReviewComment;
     contextRows?: APIDiffRow[];
     side?: string;
     replies?: APIReviewComment[];
     onNavigate?: (path: string, line: number) => void;
+    onReply?: (comment: APIReviewComment) => void;
   } = $props();
 
   function lineNum(row: APIDiffRow): number {
@@ -117,7 +119,10 @@
       </div>
     {/if}
     <div class="icwc-actions">
-      <button class="icwc-action" onclick={() => onNavigate?.(comment.path, comment.line)}>
+      <button class="icwc-action" onclick={() => {
+        onReply?.(replies.length > 0 ? replies[replies.length - 1] : comment);
+        onNavigate?.(comment.path, comment.line);
+      }}>
         <i class="fa fa-reply"></i> Reply
       </button>
     </div>
@@ -269,7 +274,7 @@
     margin-left: auto;
   }
   .icwc-body {
-    padding: 8px 12px;
+    padding: 4px 12px;
     font-size: 13px;
     color: var(--text);
     line-height: 1.5;

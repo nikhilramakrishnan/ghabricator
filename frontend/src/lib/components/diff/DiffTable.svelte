@@ -160,8 +160,8 @@
       await apiPost('/api/v2/reaction', {
         owner,
         repo,
-        commentId,
-        emoji
+        commentID: commentId,
+        content: emoji
       });
     } catch {
       // ignore errors silently for now
