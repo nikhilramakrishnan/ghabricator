@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { APIReviewComment } from './DiffTable.svelte';
   import ReactionPicker from './ReactionPicker.svelte';
+  import { MarkdownEditor } from '$lib/components/editor';
   import { formatTimestamp } from '$lib/time';
 
   const EMOJI_ICONS: Record<string, string> = {
@@ -19,16 +20,34 @@
     isReply = false,
     onReply,
     onDone,
-    onReaction
+    onReaction,
+    onEdit
   }: {
     comment: APIReviewComment;
     isReply?: boolean;
     onReply?: () => void;
     onDone?: () => void;
     onReaction?: (emoji: string) => void;
+    onEdit?: (comment: APIReviewComment, newBody: string) => Promise<void>;
   } = $props();
 
   let pickerOpen = $state(false);
+  let editing = $state(false);
+  let editDraft = $state('');
+  let saving = $state(false);
+
+  function startEdit() {
+    editDraft = comment.bodyRaw ?? '';
+    editing = true;
+  }
+
+  async function saveEdit() {
+    if (!onEdit) return;
+    saving = true;
+    await onEdit(comment, editDraft);
+    saving = false;
+    editing = false;
+  }
 </script>
 
 <div class="inline-comment" class:is-reply={isReply}>
@@ -40,25 +59,44 @@
     {#if comment.createdAt}
       <span class="time">{formatTimestamp(comment.createdAt)}</span>
     {/if}
+    {#if onEdit && comment.bodyRaw !== undefined && !editing}
+      <button class="edit-icon" onclick={startEdit} title="Edit">
+        <i class="fa fa-pencil"></i>
+      </button>
+    {/if}
   </div>
-  <div class="inline-body">
-    <div class="remark">
-      {@html comment.body}
-    </div>
-  </div>
-  {#if comment.reactions?.length}
-    <div class="reaction-pills">
-      {#each comment.reactions as r}
-        <button
-          class="reaction-pill"
-          onclick={() => onReaction?.(r.emoji)}
-          title={r.emoji}
-        >
-          <i class="fa {EMOJI_ICONS[r.emoji] ?? 'fa-smile-o'}"></i>
-          <span class="rp-count">{r.count}</span>
+  {#if editing}
+    <div class="inline-edit">
+      <MarkdownEditor bind:value={editDraft} minRows={3} autofocus />
+      <div class="edit-actions">
+        <button class="edit-btn save" onclick={saveEdit} disabled={saving}>
+          <i class="fa fa-check"></i> {saving ? 'Saving...' : 'Save'}
         </button>
-      {/each}
+        <button class="edit-btn cancel" onclick={() => editing = false}>
+          <i class="fa fa-times"></i> Cancel
+        </button>
+      </div>
     </div>
+  {:else}
+    <div class="inline-body">
+      <div class="remark">
+        {@html comment.body}
+      </div>
+    </div>
+    {#if comment.reactions?.length}
+      <div class="reaction-pills">
+        {#each comment.reactions as r}
+          <button
+            class="reaction-pill"
+            onclick={() => onReaction?.(r.emoji)}
+            title={r.emoji}
+          >
+            <i class="fa {EMOJI_ICONS[r.emoji] ?? 'fa-smile-o'}"></i>
+            <span class="rp-count">{r.count}</span>
+          </button>
+        {/each}
+      </div>
+    {/if}
   {/if}
   <div class="inline-actions">
     {#if onReply}
@@ -120,6 +158,23 @@
     margin-left: auto;
   }
 
+  .edit-icon {
+    all: unset;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .edit-icon:hover {
+    color: var(--text-link);
+    background: var(--bg-hover);
+  }
+
   .avatar {
     width: 20px;
     height: 20px;
@@ -127,11 +182,43 @@
   }
 
   .inline-body {
-    padding: 8px 12px;
+    padding: 4px 12px;
     font-size: 13px;
     color: var(--text);
     line-height: 1.5;
   }
+
+  .inline-edit {
+    padding: 8px 12px;
+  }
+
+  .edit-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .edit-btn {
+    all: unset;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .edit-btn.save {
+    background: var(--blue);
+    color: #fff;
+  }
+  .edit-btn.save:hover { opacity: 0.9; }
+  .edit-btn.save:disabled { opacity: 0.5; cursor: default; }
+  .edit-btn.cancel {
+    color: var(--text-muted);
+  }
+  .edit-btn.cancel:hover { color: var(--text); }
 
   .reaction-pills {
     display: flex;
@@ -177,7 +264,6 @@
 
   .picker-anchor {
     position: relative;
-    margin-left: auto;
   }
 
   .action-btn {

@@ -4,6 +4,7 @@
   import ContextExpander from './ContextExpander.svelte';
   import { drafts, addDraft, addReplyDraft, removeDraft, updateDraft } from '$lib/stores/inline';
   import { apiPost } from '$lib/api';
+  import { marked } from 'marked';
 
   export interface APIChangeset {
     id: number;
@@ -39,6 +40,7 @@
     author: string;
     avatarURL: string;
     body: string;
+    bodyRaw?: string;
     path: string;
     line: number;
     side: string;
@@ -155,6 +157,20 @@
     addReplyDraft(changeset.displayPath, comment.line, comment.side, comment.id);
   }
 
+  async function handleEditComment(comment: APIReviewComment, newBody: string) {
+    try {
+      await apiPost('/api/v2/inline', {
+        owner,
+        repo,
+        commentID: comment.id,
+        operation: 'save',
+        body: newBody
+      });
+      comment.body = marked.parse(newBody, { async: false }) as string;
+      comment.bodyRaw = newBody;
+    } catch { /* silent */ }
+  }
+
   async function handleReaction(commentId: number, emoji: string) {
     try {
       await apiPost('/api/v2/reaction', {
@@ -254,24 +270,24 @@
             <tr class="inline" id="ic-{thread.root.id}">
               {#if fullWidth}
                 <td colspan="2">
-                  <InlineComment comment={thread.root} onReply={() => handleReply(thread.root)} onReaction={(emoji) => handleReaction(thread.root.id, emoji)} />
+                  <InlineComment comment={thread.root} onReply={() => handleReply(thread.root)} onReaction={(emoji) => handleReaction(thread.root.id, emoji)} onEdit={handleEditComment} />
                   {#each thread.replies as reply, ri}
-                    <InlineComment comment={reply} isReply onReply={ri === thread.replies.length - 1 ? () => handleReply(reply) : undefined} onReaction={(emoji) => handleReaction(reply.id, emoji)} />
+                    <InlineComment comment={reply} isReply onReply={ri === thread.replies.length - 1 ? () => handleReply(reply) : undefined} onReaction={(emoji) => handleReaction(reply.id, emoji)} onEdit={handleEditComment} />
                   {/each}
                 </td>
               {:else if group.side === 'RIGHT'}
                 <td colspan="2"></td>
                 <td colspan="4">
-                  <InlineComment comment={thread.root} onReply={() => handleReply(thread.root)} onReaction={(emoji) => handleReaction(thread.root.id, emoji)} />
+                  <InlineComment comment={thread.root} onReply={() => handleReply(thread.root)} onReaction={(emoji) => handleReaction(thread.root.id, emoji)} onEdit={handleEditComment} />
                   {#each thread.replies as reply, ri}
-                    <InlineComment comment={reply} isReply onReply={ri === thread.replies.length - 1 ? () => handleReply(reply) : undefined} onReaction={(emoji) => handleReaction(reply.id, emoji)} />
+                    <InlineComment comment={reply} isReply onReply={ri === thread.replies.length - 1 ? () => handleReply(reply) : undefined} onReaction={(emoji) => handleReaction(reply.id, emoji)} onEdit={handleEditComment} />
                   {/each}
                 </td>
               {:else}
                 <td colspan="2">
-                  <InlineComment comment={thread.root} onReply={() => handleReply(thread.root)} onReaction={(emoji) => handleReaction(thread.root.id, emoji)} />
+                  <InlineComment comment={thread.root} onReply={() => handleReply(thread.root)} onReaction={(emoji) => handleReaction(thread.root.id, emoji)} onEdit={handleEditComment} />
                   {#each thread.replies as reply, ri}
-                    <InlineComment comment={reply} isReply onReply={ri === thread.replies.length - 1 ? () => handleReply(reply) : undefined} onReaction={(emoji) => handleReaction(reply.id, emoji)} />
+                    <InlineComment comment={reply} isReply onReply={ri === thread.replies.length - 1 ? () => handleReply(reply) : undefined} onReaction={(emoji) => handleReaction(reply.id, emoji)} onEdit={handleEditComment} />
                   {/each}
                 </td>
                 <td colspan="4"></td>
