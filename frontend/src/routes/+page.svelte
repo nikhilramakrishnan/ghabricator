@@ -32,22 +32,18 @@
 
 {#if !$user}
   <div class="landing">
-    <!-- Welcome box -->
-    <div class="l-box">
-      <div class="l-header">
-        <i class="fa fa-code-fork l-header-icon"></i>
-        <span class="l-header-title">Ghabricator</span>
-        <span class="l-tag green">GitHub-powered</span>
-      </div>
-      <div class="l-welcome">
-        <div class="l-welcome-text">
-          <h1>Code review that doesn't suck.</h1>
-          <p>Phabricator's review workflow on top of your GitHub repos. Side-by-side diffs, inline comments, Herald automation — no migration required.</p>
-          <a href="/api/auth/github" class="l-signin">
-            <i class="fa fa-github"></i> Sign in with GitHub
-          </a>
+    <!-- Hero -->
+    <div class="l-hero">
+      <div class="l-author-note">
+        <img class="l-author-avatar" src="https://avatars.githubusercontent.com/nikhilr?s=72" alt="nikhilr" />
+        <div class="l-author-bubble">
+          <span class="l-author-name">nikhilr</span>
+          <p>I missed Phabricator so I made my own.</p>
         </div>
       </div>
+      <a href="/api/auth/github" class="l-signin">
+        <i class="fa fa-github"></i> Log in to Ghabricator
+      </a>
     </div>
 
     <!-- Diff preview box -->
@@ -57,19 +53,24 @@
         <span class="l-header-title">src/auth/session.go</span>
         <span class="l-tag blue">+6 -1</span>
       </div>
-      <table class="diff-mock">
+      <table class="diff-mock sbs">
+        <colgroup>
+          <col class="dm-num" />
+          <col class="dm-code" />
+          <col class="dm-num" />
+          <col class="dm-code" />
+        </colgroup>
         <tbody>
-          <tr class="ctx"><td class="ln">14</td><td class="ln">14</td><td class="code">func (s *Store) Get(id string) *Session {'{'}</td></tr>
-          <tr class="del"><td class="ln">15</td><td class="ln"></td><td class="code">-   sess, ok := s.cache[id]</td></tr>
-          <tr class="add"><td class="ln"></td><td class="ln">15</td><td class="code">+   sess, ok := s.sessions[id]</td></tr>
-          <tr class="ctx"><td class="ln">16</td><td class="ln">16</td><td class="code">    if !ok {'{'}</td></tr>
-          <tr class="ctx"><td class="ln">17</td><td class="ln">17</td><td class="code">        return nil</td></tr>
-          <tr class="ctx"><td class="ln">18</td><td class="ln">18</td><td class="code">    {'}'}</td></tr>
-          <tr class="add"><td class="ln"></td><td class="ln">19</td><td class="code">+   if time.Since(sess.CreatedAt) > sessionTTL {'{'}</td></tr>
-          <tr class="add"><td class="ln"></td><td class="ln">20</td><td class="code">+       return nil</td></tr>
-          <tr class="add"><td class="ln"></td><td class="ln">21</td><td class="code">+   {'}'}</td></tr>
-          <tr class="ctx"><td class="ln">19</td><td class="ln">22</td><td class="code">    return sess</td></tr>
-          <tr class="ctx"><td class="ln">20</td><td class="ln">23</td><td class="code">{'}'}</td></tr>
+          <tr><td class="n">14</td><td class="ctx">func (s *Store) Get(id string) *Session {'{'}</td><td class="n">14</td><td class="ctx">func (s *Store) Get(id string) *Session {'{'}</td></tr>
+          <tr><td class="n old">15</td><td class="old">    sess, ok := s.cache[id]</td><td class="n new"></td><td class="new">    sess, ok := s.sessions[id]</td></tr>
+          <tr><td class="n">16</td><td class="ctx">    if !ok {'{'}</td><td class="n">16</td><td class="ctx">    if !ok {'{'}</td></tr>
+          <tr><td class="n">17</td><td class="ctx">        return nil</td><td class="n">17</td><td class="ctx">        return nil</td></tr>
+          <tr><td class="n">18</td><td class="ctx">    {'}'}</td><td class="n">18</td><td class="ctx">    {'}'}</td></tr>
+          <tr><td class="n"></td><td class="blank"></td><td class="n new">19</td><td class="new">    if time.Since(sess.CreatedAt) > sessionTTL {'{'}</td></tr>
+          <tr><td class="n"></td><td class="blank"></td><td class="n new">20</td><td class="new">        return nil</td></tr>
+          <tr><td class="n"></td><td class="blank"></td><td class="n new">21</td><td class="new">    {'}'}</td></tr>
+          <tr><td class="n">19</td><td class="ctx">    return sess</td><td class="n">22</td><td class="ctx">    return sess</td></tr>
+          <tr><td class="n">20</td><td class="ctx">{'}'}</td><td class="n">23</td><td class="ctx">{'}'}</td></tr>
         </tbody>
       </table>
       <div class="l-inline">
@@ -119,7 +120,7 @@
           <i class="fa fa-search l-feat-icon"></i>
           <div class="l-feat-content">
             <div class="l-feat-name">Search everything</div>
-            <div class="l-feat-desc">PRs, issues, code, and repos across all your GitHub organizations</div>
+            <div class="l-feat-desc">PRs, issues, code, and repos across all your organizations</div>
           </div>
         </div>
         <div class="l-feat-item">
@@ -132,10 +133,10 @@
         </div>
         <div class="l-feat-item">
           <div class="l-feat-bar green"></div>
-          <i class="fa fa-github l-feat-icon"></i>
+          <i class="fa fa-bolt l-feat-icon"></i>
           <div class="l-feat-content">
-            <div class="l-feat-name">GitHub is the source of truth</div>
-            <div class="l-feat-desc">No database, no migration. Ghabricator is just a better lens</div>
+            <div class="l-feat-name">Zero setup</div>
+            <div class="l-feat-desc">No database, no migration, no config. Sign in and go</div>
           </div>
         </div>
       </div>
@@ -243,9 +244,9 @@
 <style>
   /* ===== Landing page — PHUI style ===== */
   .landing {
-    max-width: 780px;
+    max-width: 860px;
     margin: 0 auto;
-    padding: 16px 16px 48px;
+    padding: 0 16px 48px;
   }
 
   /* Box — mirrors PHUI Box */
@@ -276,7 +277,7 @@
     color: var(--text);
   }
 
-  /* Tag — mirrors PHUI Tag */
+  /* Tag */
   .l-tag {
     font-size: 12px;
     font-weight: 600;
@@ -285,32 +286,60 @@
     border-radius: 3px;
     margin-left: auto;
   }
-  .l-tag.green {
-    background: var(--tag-green-bg);
-    color: var(--tag-green-text);
-  }
   .l-tag.blue {
     background: var(--tag-blue-bg);
     color: var(--tag-blue-text);
   }
 
-  /* Welcome content */
-  .l-welcome {
-    padding: 32px 24px;
+  /* Hero */
+  .l-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 24px 16px;
   }
-  .l-welcome h1 {
-    font-size: 22px;
-    font-weight: 700;
-    margin: 0 0 12px;
+  .l-author-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    text-align: left;
+    margin-bottom: 20px;
+  }
+  .l-author-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .l-author-bubble {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    position: relative;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .l-author-bubble::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 12px;
+    width: 10px;
+    height: 10px;
+    background: var(--bg-card);
+    border-left: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    transform: rotate(45deg);
+  }
+  .l-author-name {
+    font-weight: 600;
     color: var(--text);
-    line-height: 1.3;
+    margin-right: 4px;
   }
-  .l-welcome p {
-    font-size: 14px;
+  .l-author-bubble p {
+    margin: 2px 0 0;
     color: var(--text-muted);
-    line-height: 1.6;
-    margin: 0 0 24px;
-    max-width: 520px;
   }
   .l-signin {
     display: inline-flex;
@@ -318,9 +347,9 @@
     gap: 8px;
     background: var(--green);
     color: var(--text-on-dark);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
-    padding: 8px 20px;
+    padding: 10px 28px;
     border-radius: 3px;
     text-decoration: none;
   }
@@ -329,32 +358,32 @@
     text-decoration: none;
   }
 
-  /* Diff mock */
-  .diff-mock {
+  /* Diff mock — side-by-side */
+  .diff-mock.sbs {
     width: 100%;
     border-collapse: collapse;
     font-family: var(--font-mono);
-    font-size: 12px;
-    line-height: 1.6;
+    font-size: 11px;
+    line-height: 1.5;
   }
-  .diff-mock td {
-    padding: 0 10px;
+  .diff-mock.sbs col.dm-num { width: 4em; }
+  .diff-mock.sbs col.dm-code { width: calc(50% - 4em); }
+  .diff-mock.sbs td {
+    padding: 1px 8px;
     white-space: pre;
   }
-  .diff-mock .ln {
-    width: 36px;
-    text-align: right;
+  .diff-mock.sbs td.n {
     color: var(--text-muted);
-    opacity: 0.5;
+    text-align: right;
     user-select: none;
-    padding: 0 8px;
+    padding: 1px 4px;
   }
-  .diff-mock .code { width: 100%; }
-  .diff-mock .ctx { background: transparent; }
-  .diff-mock .add { background: var(--diff-add-bg); }
-  .diff-mock .add .ln { background: var(--diff-add-num-bg); }
-  .diff-mock .del { background: var(--diff-del-bg); }
-  .diff-mock .del .ln { background: var(--diff-del-num-bg); }
+  .diff-mock.sbs td.ctx { background: transparent; }
+  .diff-mock.sbs td.old { background: var(--diff-del-bg); }
+  .diff-mock.sbs td.n.old { background: var(--diff-del-num-bg); }
+  .diff-mock.sbs td.new { background: var(--diff-add-bg); }
+  .diff-mock.sbs td.n.new { background: var(--diff-add-num-bg); }
+  .diff-mock.sbs td.blank { background: var(--bg-hover); }
 
   /* Inline comment — mirrors Timeline event */
   .l-inline {
