@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -21,28 +22,82 @@ const (
 	stateCookieNm string     = "oauth_state"
 )
 
-type OAuthHandler struct {
+// AuthHandler handles authentication via either OAuth or a static PAT.
+type AuthHandler struct {
+	// OAuth mode fields (nil in token mode).
 	config *oauth2.Config
 	store  *SessionStore
+
+	// Token mode fields (nil in OAuth mode).
+	tokenSession *Session
+	tokenClient  *gh.Client
 }
 
-// Store returns the underlying session store.
-func (h *OAuthHandler) Store() *SessionStore { return h.store }
+// Store returns the underlying session store (nil in token mode).
+func (h *AuthHandler) Store() *SessionStore { return h.store }
 
-func NewOAuthHandler(store *SessionStore) *OAuthHandler {
-	return &OAuthHandler{
+// TokenSession returns the static session in token mode (nil in OAuth mode).
+func (h *AuthHandler) TokenSession() *Session { return h.tokenSession }
+
+// IsTokenMode returns true if using a static PAT instead of OAuth.
+func (h *AuthHandler) IsTokenMode() bool { return h.tokenSession != nil }
+
+// NewAuthHandler creates an auth handler. It auto-detects the mode:
+//   - If GITHUB_TOKEN is set → token mode (no OAuth app needed)
+//   - Otherwise → OAuth mode (requires GITHUB_CLIENT_ID + GITHUB_CLIENT_SECRET)
+func NewAuthHandler(store *SessionStore) (*AuthHandler, error) {
+	if pat := os.Getenv("GITHUB_TOKEN"); pat != "" {
+		return newTokenHandler(pat)
+	}
+	clientID := os.Getenv("GITHUB_CLIENT_ID")
+	clientSecret := os.Getenv("GITHUB_CLIENT_SECRET")
+	if clientID == "" || clientSecret == "" {
+		return nil, fmt.Errorf("set GITHUB_TOKEN for PAT mode, or GITHUB_CLIENT_ID + GITHUB_CLIENT_SECRET for OAuth mode")
+	}
+	return &AuthHandler{
 		config: &oauth2.Config{
-			ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
-			ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
 			Scopes:       []string{"repo", "gist"},
 			Endpoint:     oauthgithub.Endpoint,
 		},
 		store: store,
+	}, nil
+}
+
+func newTokenHandler(pat string) (*AuthHandler, error) {
+	// Build a static client from the PAT.
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: pat})
+	client := gh.NewClient(oauth2.NewClient(ctx, ts))
+
+	// Fetch the authenticated user to populate session info.
+	user, _, err := client.Users.Get(ctx, "")
+	if err != nil {
+		return nil, fmt.Errorf("GITHUB_TOKEN invalid or cannot reach GitHub: %w", err)
 	}
+
+	sess := &Session{
+		ID:        "token-mode",
+		Token:     &oauth2.Token{AccessToken: pat},
+		Login:     user.GetLogin(),
+		AvatarURL: user.GetAvatarURL(),
+	}
+
+	log.Printf("Token mode: authenticated as %s", sess.Login)
+	return &AuthHandler{
+		tokenSession: sess,
+		tokenClient:  client,
+	}, nil
 }
 
 // HandleLogin redirects to GitHub's OAuth authorize page.
-func (h *OAuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
+// In token mode, just redirects to /.
+func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	if h.IsTokenMode() {
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
 	state := randomState()
 	http.SetCookie(w, &http.Cookie{
 		Name:     stateCookieNm,
@@ -77,7 +132,12 @@ func (h *OAuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleCallback exchanges the OAuth code for a token and creates a session.
-func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
+// No-op in token mode.
+func (h *AuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
+	if h.IsTokenMode() {
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
 	// Verify state
 	stateCookie, err := r.Cookie(stateCookieNm)
 	if err != nil || stateCookie.Value != r.URL.Query().Get("state") {
@@ -132,7 +192,12 @@ func (h *OAuthHandler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleLogout clears the session.
-func (h *OAuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
+// In token mode, just redirects to / (can't log out of a PAT).
+func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
+	if h.IsTokenMode() {
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
 	sess := h.store.GetFromRequest(r)
 	if sess != nil {
 		h.store.Delete(sess.ID)
@@ -143,14 +208,23 @@ func (h *OAuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 
 // RequireAuth is middleware that ensures the request has a valid session.
 // It stores the session and a GitHub client in the request context.
-func (h *OAuthHandler) RequireAuth(next http.Handler) http.Handler {
+func (h *AuthHandler) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sess := h.store.GetFromRequest(r)
-		if sess == nil {
-			http.Redirect(w, r, "/auth/github", http.StatusTemporaryRedirect)
-			return
+		var sess *Session
+		var client *gh.Client
+
+		if h.IsTokenMode() {
+			sess = h.tokenSession
+			client = h.tokenClient
+		} else {
+			sess = h.store.GetFromRequest(r)
+			if sess == nil {
+				http.Redirect(w, r, "/auth/github", http.StatusTemporaryRedirect)
+				return
+			}
+			client = gh.NewClient(h.config.Client(r.Context(), sess.Token))
 		}
-		client := gh.NewClient(h.config.Client(r.Context(), sess.Token))
+
 		ctx := context.WithValue(r.Context(), ctxSession, sess)
 		ctx = context.WithValue(ctx, ctxGHClient, client)
 		next.ServeHTTP(w, r.WithContext(ctx))

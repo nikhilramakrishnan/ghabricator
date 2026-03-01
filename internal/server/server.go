@@ -10,7 +10,7 @@ import (
 
 type Server struct {
 	mux    *http.ServeMux
-	auth   *auth.OAuthHandler
+	auth   *auth.AuthHandler
 	herald *herald.Store
 }
 
@@ -21,9 +21,14 @@ func New() (*Server, error) {
 	}
 	store := auth.NewSessionStore(secret)
 
+	authHandler, err := auth.NewAuthHandler(store)
+	if err != nil {
+		return nil, err
+	}
+
 	s := &Server{
 		mux:    http.NewServeMux(),
-		auth:   auth.NewOAuthHandler(store),
+		auth:   authHandler,
 		herald: herald.NewStore(),
 	}
 	s.routes()
@@ -94,6 +99,15 @@ func (s *Server) routes() {
 }
 
 func (s *Server) handleAPIAuthMe(w http.ResponseWriter, r *http.Request) {
+	// Token mode: always authenticated.
+	if s.auth.IsTokenMode() {
+		sess := s.auth.TokenSession()
+		jsonOK(w, map[string]string{
+			"login":     sess.Login,
+			"avatarURL": sess.AvatarURL,
+		})
+		return
+	}
 	sess := s.auth.Store().GetFromRequest(r)
 	if sess == nil {
 		jsonError(w, "not authenticated", http.StatusUnauthorized)
@@ -104,6 +118,3 @@ func (s *Server) handleAPIAuthMe(w http.ResponseWriter, r *http.Request) {
 		"avatarURL": sess.AvatarURL,
 	})
 }
-
-
-
