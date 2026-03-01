@@ -123,9 +123,24 @@ export const S = {
   // Search
   search: {
     title: 'Search',
-    prs: 'Pull Requests',
+    prs: 'Pull requests',
+    issues: 'Issues',
     code: 'Code',
     repos: 'Repositories',
+    filterBy: 'Filter by',
+    state: 'State',
+    languages: 'Languages',
+    open: 'Open',
+    closed: 'Closed',
+    results: 'results',
+    sortBy: 'Sort by:',
+    sortBestMatch: 'Best match',
+    sortNewest: 'Most recently created',
+    sortOldest: 'Least recently created',
+    sortMostCommented: 'Most commented',
+    sortRecentlyUpdated: 'Most recently updated',
+    noResults: 'No results found.',
+    matches: 'matches',
   },
 
   // Breadcrumbs

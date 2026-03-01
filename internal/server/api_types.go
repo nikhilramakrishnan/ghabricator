@@ -341,34 +341,61 @@ type APIPasteCreateResponse struct {
 // --- Search API types ---
 
 type APISearchPR struct {
-	Number    int    `json:"number"`
-	Title     string `json:"title"`
-	Repo      string `json:"repo"`
-	Author    string `json:"author"`
-	AvatarURL string `json:"avatarURL"`
-	UpdatedAt string `json:"updatedAt"`
-	Draft     bool   `json:"draft"`
-	URL       string `json:"url"`
+	Number        int        `json:"number"`
+	Title         string     `json:"title"`
+	Repo          string     `json:"repo"`
+	State         string     `json:"state"`
+	Author        string     `json:"author"`
+	AvatarURL     string     `json:"avatarURL"`
+	Labels        []APILabel `json:"labels,omitempty"`
+	Body          string     `json:"body,omitempty"`
+	CommentsCount int        `json:"commentsCount"`
+	Draft         bool       `json:"draft"`
+	CreatedAt     string     `json:"createdAt"`
+	UpdatedAt     string     `json:"updatedAt"`
+}
+
+type APISearchIssue struct {
+	Number        int        `json:"number"`
+	Title         string     `json:"title"`
+	Repo          string     `json:"repo"`
+	State         string     `json:"state"`
+	Author        string     `json:"author"`
+	AvatarURL     string     `json:"avatarURL"`
+	Labels        []APILabel `json:"labels,omitempty"`
+	Body          string     `json:"body,omitempty"`
+	CommentsCount int        `json:"commentsCount"`
+	CreatedAt     string     `json:"createdAt"`
+	UpdatedAt     string     `json:"updatedAt"`
 }
 
 type APISearchCodeResult struct {
-	Repo     string `json:"repo"`
-	Path     string `json:"path"`
-	Fragment string `json:"fragment"`
+	Repo       string `json:"repo"`
+	Path       string `json:"path"`
+	Fragment   string `json:"fragment"`
+	Language   string `json:"language,omitempty"`
+	MatchCount int    `json:"matchCount"`
+	HTMLURL    string `json:"htmlURL,omitempty"`
 }
 
 type APISearchRepoResult struct {
-	FullName    string `json:"fullName"`
-	Description string `json:"description"`
-	Stars       int    `json:"stars"`
-	Language    string `json:"language"`
-	AvatarURL   string `json:"avatarURL"`
+	FullName    string   `json:"fullName"`
+	Description string   `json:"description"`
+	Stars       int      `json:"stars"`
+	Forks       int      `json:"forks"`
+	Language    string   `json:"language"`
+	LangColor   string   `json:"langColor,omitempty"`
+	AvatarURL   string   `json:"avatarURL"`
+	UpdatedAt   string   `json:"updatedAt"`
+	Topics      []string `json:"topics,omitempty"`
 }
 
 type APISearchResponse struct {
-	PRs   []APISearchPR          `json:"prs,omitempty"`
-	Code  []APISearchCodeResult  `json:"code,omitempty"`
-	Repos []APISearchRepoResult  `json:"repos,omitempty"`
+	Counts map[string]int        `json:"counts"`
+	PRs    []APISearchPR         `json:"prs,omitempty"`
+	Issues []APISearchIssue      `json:"issues,omitempty"`
+	Code   []APISearchCodeResult `json:"code,omitempty"`
+	Repos  []APISearchRepoResult `json:"repos,omitempty"`
 }
 
 // --- Workflow Runs API types ---

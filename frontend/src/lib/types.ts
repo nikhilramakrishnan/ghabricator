@@ -321,29 +321,56 @@ export interface APISearchPR {
   number: number;
   title: string;
   repo: string;
+  state: string;
   author: string;
   avatarURL: string;
+  labels: APILabel[];
+  body: string;
+  commentsCount: number;
+  createdAt: string;
   updatedAt: string;
   draft: boolean;
   url: string;
+}
+
+export interface APISearchIssue {
+  number: number;
+  title: string;
+  repo: string;
+  state: string;
+  author: string;
+  avatarURL: string;
+  labels: APILabel[];
+  body: string;
+  commentsCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface APISearchCodeResult {
   repo: string;
   path: string;
   fragment: string;
+  language: string;
+  matchCount: number;
+  htmlURL: string;
 }
 
 export interface APISearchRepoResult {
   fullName: string;
   description: string;
   stars: number;
+  forks: number;
   language: string;
+  updatedAt: string;
+  topics: string[];
   avatarURL: string;
 }
 
 export interface APISearchResponse {
+  counts?: Record<string, number>;
   prs?: APISearchPR[];
+  issues?: APISearchIssue[];
   code?: APISearchCodeResult[];
   repos?: APISearchRepoResult[];
 }

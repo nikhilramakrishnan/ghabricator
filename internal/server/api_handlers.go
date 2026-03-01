@@ -702,88 +702,176 @@ func (s *Server) handleAPIHeraldDelete(w http.ResponseWriter, r *http.Request) {
 // --- Task 11: Search API ---
 
 func (s *Server) handleAPISearch(w http.ResponseWriter, r *http.Request) {
-	client := auth.GitHubClientFromContext(r.Context())
 	query := r.URL.Query().Get("q")
 	searchType := r.URL.Query().Get("type")
 
 	if query == "" {
-		jsonOK(w, APISearchResponse{})
+		jsonOK(w, APISearchResponse{Counts: map[string]int{}})
 		return
 	}
 
-	if searchType == "" {
-		searchType = "pr"
+	// Normalize type param — accept both singular and plural
+	switch searchType {
+	case "pr", "prs":
+		searchType = "prs"
+	case "issue", "issues":
+		searchType = "issues"
+	case "repo", "repos":
+		searchType = "repos"
+	case "code":
+		searchType = "code"
+	default:
+		searchType = "prs"
 	}
+
+	sess := auth.SessionFromContext(r.Context())
+	token := sess.Token.AccessToken
+	ctx := r.Context()
 
 	var resp APISearchResponse
 
-	switch searchType {
-	case "pr":
-		prs := s.searchPRs(r, client, "is:pr "+query)
-		apiPRs := make([]APISearchPR, 0, len(prs))
-		for _, pr := range prs {
-			apiPRs = append(apiPRs, APISearchPR{
-				Number:    pr.Number,
-				Title:     pr.Title,
-				Repo:      pr.Repo,
-				Author:    pr.Author,
-				AvatarURL: pr.AvatarURL,
-				UpdatedAt: pr.UpdatedAt,
-				Draft:     pr.Draft,
-				URL:       pr.URL,
-			})
+	if searchType == "code" {
+		// Code tab: run GraphQL (for PR/issue/repo counts) and REST code search in parallel
+		type gqlResult struct {
+			res *ghapi.SearchResult
+			err error
 		}
-		resp.PRs = apiPRs
+		type codeResult struct {
+			codes      []APISearchCodeResult
+			totalCount int
+			err        error
+		}
+		gqlCh := make(chan gqlResult, 1)
+		codeCh := make(chan codeResult, 1)
 
-	case "code":
-		result, _, err := client.Search.Code(r.Context(), query, &gh.SearchOptions{
-			ListOptions: gh.ListOptions{PerPage: 25},
-		})
+		go func() {
+			res, err := ghapi.SearchGraphQL(ctx, token, query, "code") // "code" => all first=0
+			gqlCh <- gqlResult{res, err}
+		}()
+
+		go func() {
+			client := auth.GitHubClientFromContext(r.Context())
+			result, _, err := client.Search.Code(ctx, query, &gh.SearchOptions{
+				ListOptions: gh.ListOptions{PerPage: 25},
+			})
+			if err != nil {
+				codeCh <- codeResult{err: err}
+				return
+			}
+			codes := make([]APISearchCodeResult, 0, len(result.CodeResults))
+			for _, cr := range result.CodeResults {
+				fragment := ""
+				matchCount := 0
+				if len(cr.TextMatches) > 0 {
+					fragment = cr.TextMatches[0].GetFragment()
+					matchCount = len(cr.TextMatches)
+				}
+				lang := ""
+				if cr.GetRepository() != nil {
+					lang = cr.GetRepository().GetLanguage()
+				}
+				codes = append(codes, APISearchCodeResult{
+					Repo:       cr.GetRepository().GetFullName(),
+					Path:       cr.GetPath(),
+					Fragment:   fragment,
+					Language:   lang,
+					MatchCount: matchCount,
+					HTMLURL:    cr.GetHTMLURL(),
+				})
+			}
+			codeCh <- codeResult{codes: codes, totalCount: result.GetTotal()}
+		}()
+
+		gql := <-gqlCh
+		code := <-codeCh
+
+		counts := map[string]int{}
+		if gql.err == nil && gql.res != nil {
+			counts = gql.res.Counts
+		}
+		if code.err == nil {
+			counts["code"] = code.totalCount
+			resp.Code = code.codes
+		} else {
+			log.Printf("api search code error: %v", code.err)
+		}
+		resp.Counts = counts
+	} else {
+		// Non-code tabs: single GraphQL call
+		result, err := ghapi.SearchGraphQL(ctx, token, query, searchType)
 		if err != nil {
-			log.Printf("api search code error: %v", err)
-			jsonError(w, "code search failed", http.StatusBadGateway)
+			log.Printf("api search graphql error: %v", err)
+			jsonError(w, "search failed", http.StatusBadGateway)
 			return
 		}
-		codes := make([]APISearchCodeResult, 0, len(result.CodeResults))
-		for _, cr := range result.CodeResults {
-			fragment := ""
-			if len(cr.TextMatches) > 0 {
-				fragment = cr.TextMatches[0].GetFragment()
-			}
-			codes = append(codes, APISearchCodeResult{
-				Repo:     cr.GetRepository().GetFullName(),
-				Path:     cr.GetPath(),
-				Fragment: fragment,
-			})
-		}
-		resp.Code = codes
 
-	case "repo":
-		result, _, err := client.Search.Repositories(r.Context(), query, &gh.SearchOptions{
-			Sort:        "stars",
-			Order:       "desc",
-			ListOptions: gh.ListOptions{PerPage: 25},
-		})
-		if err != nil {
-			log.Printf("api search repos error: %v", err)
-			jsonError(w, "repo search failed", http.StatusBadGateway)
-			return
-		}
-		repos := make([]APISearchRepoResult, 0, len(result.Repositories))
-		for _, repo := range result.Repositories {
-			avatarURL := ""
-			if repo.Owner != nil {
-				avatarURL = repo.Owner.GetAvatarURL()
+		resp.Counts = result.Counts
+
+		switch searchType {
+		case "prs":
+			apiPRs := make([]APISearchPR, 0, len(result.PRs))
+			for _, pr := range result.PRs {
+				labels := make([]APILabel, 0, len(pr.Labels))
+				for _, l := range pr.Labels {
+					labels = append(labels, APILabel{Name: l.Name, Color: l.Color})
+				}
+				apiPRs = append(apiPRs, APISearchPR{
+					Number:        pr.Number,
+					Title:         pr.Title,
+					Repo:          pr.Repo,
+					State:         pr.State,
+					Author:        pr.Author,
+					AvatarURL:     pr.AvatarURL,
+					Labels:        labels,
+					Body:          pr.Body,
+					CommentsCount: pr.CommentsCount,
+					Draft:         pr.Draft,
+					CreatedAt:     pr.CreatedAt.Format("2006-01-02T15:04:05Z"),
+					UpdatedAt:     pr.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+				})
 			}
-			repos = append(repos, APISearchRepoResult{
-				FullName:    repo.GetFullName(),
-				Description: repo.GetDescription(),
-				Stars:       repo.GetStargazersCount(),
-				Language:    repo.GetLanguage(),
-				AvatarURL:   avatarURL,
-			})
+			resp.PRs = apiPRs
+
+		case "issues":
+			apiIssues := make([]APISearchIssue, 0, len(result.Issues))
+			for _, issue := range result.Issues {
+				labels := make([]APILabel, 0, len(issue.Labels))
+				for _, l := range issue.Labels {
+					labels = append(labels, APILabel{Name: l.Name, Color: l.Color})
+				}
+				apiIssues = append(apiIssues, APISearchIssue{
+					Number:        issue.Number,
+					Title:         issue.Title,
+					Repo:          issue.Repo,
+					State:         issue.State,
+					Author:        issue.Author,
+					AvatarURL:     issue.AvatarURL,
+					Labels:        labels,
+					Body:          issue.Body,
+					CommentsCount: issue.CommentsCount,
+					CreatedAt:     issue.CreatedAt.Format("2006-01-02T15:04:05Z"),
+					UpdatedAt:     issue.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+				})
+			}
+			resp.Issues = apiIssues
+
+		case "repos":
+			apiRepos := make([]APISearchRepoResult, 0, len(result.Repos))
+			for _, repo := range result.Repos {
+				apiRepos = append(apiRepos, APISearchRepoResult{
+					FullName:    repo.FullName,
+					Description: repo.Description,
+					Stars:       repo.Stars,
+					Forks:       repo.Forks,
+					Language:    repo.Language,
+					LangColor:   repo.LangColor,
+					AvatarURL:   repo.AvatarURL,
+					UpdatedAt:   repo.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+					Topics:      repo.Topics,
+				})
+			}
+			resp.Repos = apiRepos
 		}
-		resp.Repos = repos
 	}
 
 	jsonOK(w, resp)
