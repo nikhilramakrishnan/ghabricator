@@ -1,11 +1,14 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   let {
     title,
     icon = '',
     count,
     collapsible = false,
     collapsed = false,
-    onToggle
+    onToggle,
+    actions
   }: {
     title: string;
     icon?: string;
@@ -13,6 +16,7 @@
     collapsible?: boolean;
     collapsed?: boolean;
     onToggle?: () => void;
+    actions?: Snippet;
   } = $props();
 </script>
 
@@ -28,6 +32,11 @@
         <span class="header-count">{count}</span>
       {/if}
     </h1>
+    {#if actions}
+      <div class="header-actions" onclick={(e) => e.stopPropagation()}>
+        {@render actions()}
+      </div>
+    {/if}
   </div>
 {:else}
   <div class="header">
@@ -40,6 +49,11 @@
         <span class="header-count">{count}</span>
       {/if}
     </h1>
+    {#if actions}
+      <div class="header-actions">
+        {@render actions()}
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -48,6 +62,9 @@
     background: var(--bg-card-header);
     padding: 6px 12px;
     border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
   .header.clickable {
     cursor: pointer;
@@ -78,5 +95,10 @@
     padding: 1px 6px;
     border-radius: 10px;
     margin-left: 2px;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 </style>

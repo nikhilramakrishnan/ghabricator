@@ -465,7 +465,15 @@
 <div class="pr-content">
   <!-- Revision Contents — Phabricator-style property card -->
   <Box border>
-    <HeaderView title={S.pr.revisionContents} icon="fa-file-text-o" />
+    <HeaderView title={S.pr.revisionContents} icon="fa-file-text-o">
+      {#snippet actions()}
+        {#if !editingSummary}
+          <button class="header-action-btn" onclick={startEditSummary}>
+            <i class="fa fa-pencil"></i> Edit
+          </button>
+        {/if}
+      {/snippet}
+    </HeaderView>
     <div class="plist">
       <div class="plist-row">
         <span class="plist-key">{S.pr.author}</span>
@@ -536,17 +544,10 @@
           </button>
         </div>
       </div>
-    {:else}
+    {:else if pr.body?.trim()}
       <div class="summary-section">
-        {#if pr.body?.trim()}
-          <div class="remarkup-content">
-            {@html pr.body}
-          </div>
-        {/if}
-        <div class="summary-edit-row">
-          <button class="summary-edit-link" onclick={startEditSummary}>
-            <i class="fa fa-pencil"></i> Edit Summary
-          </button>
+        <div class="remarkup-content">
+          {@html pr.body}
         </div>
       </div>
     {/if}
@@ -602,6 +603,11 @@
                   <strong>{item.event.author.login}</strong>
                   <span class="stream-card-action">{item.event.action}</span>
                   <span class="stream-card-time">{formatTimestamp(item.event.createdAt)}</span>
+                  {#if item.event.commentID && item.event.bodyRaw !== undefined && editingCommentId !== item.event.commentID}
+                    <button class="stream-card-edit-btn" onclick={() => startEditComment(item.event)} title="Edit">
+                      <i class="fa fa-pencil"></i>
+                    </button>
+                  {/if}
                 </div>
                 {#if editingCommentId === item.event.commentID}
                   <div class="stream-card-edit">
@@ -638,11 +644,6 @@
                   <button class="stream-action-btn" onclick={() => document.querySelector('.review-form-anchor')?.scrollIntoView({ behavior: 'smooth' })}>
                     <i class="fa fa-reply"></i> Reply
                   </button>
-                  {#if item.event.commentID && item.event.bodyRaw !== undefined}
-                    <button class="stream-action-btn" onclick={() => startEditComment(item.event)}>
-                      <i class="fa fa-pencil"></i> Edit
-                    </button>
-                  {/if}
                   {#if item.event.commentID}
                     <div class="picker-anchor">
                       <button class="stream-action-btn" title="Add reaction" onclick={() => reactionPickerOpen = reactionPickerOpen === item.event.commentID ? null : (item.event.commentID ?? null)}>
@@ -998,10 +999,7 @@
   }
   .edit-btn.cancel:hover { color: var(--text); }
 
-  .summary-edit-row {
-    padding: 4px 12px 8px;
-  }
-  .summary-edit-link {
+  .header-action-btn {
     all: unset;
     display: inline-flex;
     align-items: center;
@@ -1009,9 +1007,30 @@
     font-size: 12px;
     color: var(--text-muted);
     cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 3px;
   }
-  .summary-edit-link:hover {
+  .header-action-btn:hover {
     color: var(--text-link);
+    background: var(--bg-hover);
+  }
+
+  .stream-card-edit-btn {
+    all: unset;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-left: 4px;
+  }
+  .stream-card-edit-btn:hover {
+    color: var(--text-link);
+    background: var(--bg-hover);
   }
 
   /* Compact status events (no body) */
