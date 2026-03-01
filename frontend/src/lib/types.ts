@@ -164,6 +164,7 @@ export interface APIPRDetailResponse {
   timeline: APITimelineEvent[];
   heraldMatches?: APIHeraldMatch[];
   commits: APICommit[];
+  viewerPermission: string; // ADMIN, MAINTAIN, WRITE, TRIAGE, READ, or ""
 }
 
 // --- Repos ---

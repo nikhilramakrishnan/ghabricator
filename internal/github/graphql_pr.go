@@ -9,6 +9,7 @@ import (
 const prDetailQuery = `
 query PRDetail($owner: String!, $repo: String!, $number: Int!) {
   repository(owner: $owner, name: $repo) {
+    viewerPermission
     pullRequest(number: $number) {
       number
       title
@@ -100,7 +101,8 @@ type gqlReactionGroup struct {
 type gqlPRResponse struct {
 	Data struct {
 		Repository struct {
-			PullRequest struct {
+			ViewerPermission string `json:"viewerPermission"`
+			PullRequest      struct {
 				Number       int       `json:"number"`
 				Title        string    `json:"title"`
 				Body         string    `json:"body"`
@@ -171,11 +173,12 @@ type gqlPRResponse struct {
 
 // PRDetailGraphQL holds all data fetched from the single GraphQL query.
 type PRDetailGraphQL struct {
-	PR            *PullRequest
-	Reviews       []Review
-	IssueComments []IssueComment
-	Commits       []PRCommit
-	CheckRuns     []CheckRun
+	PR               *PullRequest
+	Reviews          []Review
+	IssueComments    []IssueComment
+	Commits          []PRCommit
+	CheckRuns        []CheckRun
+	ViewerPermission string // ADMIN, MAINTAIN, WRITE, TRIAGE, READ, or ""
 }
 
 // FetchPRDetailGraphQL fetches PR metadata, reviews, issue comments, commits,
@@ -284,10 +287,11 @@ func FetchPRDetailGraphQL(ctx context.Context, token, owner, repo string, number
 	}
 
 	return &PRDetailGraphQL{
-		PR:            pr,
-		Reviews:       reviews,
-		IssueComments: issueComments,
-		Commits:       commits,
+		PR:               pr,
+		Reviews:          reviews,
+		IssueComments:    issueComments,
+		Commits:          commits,
+		ViewerPermission: resp.Data.Repository.ViewerPermission,
 	}, nil
 }
 

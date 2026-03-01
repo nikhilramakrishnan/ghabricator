@@ -718,7 +718,7 @@
   {/if}
 
   <div class="review-form-anchor"></div>
-  <ReviewForm {owner} {repo} {number} merged={pr.merged} prState={pr.state} authorLogin={pr.author.login} approved={isApproved} />
+  <ReviewForm {owner} {repo} {number} merged={pr.merged} prState={pr.state} authorLogin={pr.author.login} approved={isApproved} viewerPermission={resp.viewerPermission ?? ''} />
 </div>
 
 <style>

@@ -12,6 +12,7 @@
     prState = 'open',
     authorLogin = '',
     approved = false,
+    viewerPermission = '',
   }: {
     owner: string;
     repo: string;
@@ -20,9 +21,11 @@
     prState?: string;
     authorLogin?: string;
     approved?: boolean;
+    viewerPermission?: string;
   } = $props();
 
   let isAuthor = $derived($user?.login === authorLogin);
+  let hasWriteAccess = $derived(['ADMIN', 'MAINTAIN', 'WRITE'].includes(viewerPermission));
 
   let body = $state('');
   let action = $state<'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES'>('COMMENT');
@@ -98,7 +101,7 @@
     disabled={submitting}
   ></textarea>
   <div class="form-footer">
-    {#if !isAuthor}
+    {#if hasWriteAccess && !isAuthor}
       <div class="action-picker">
         <label class="action-option" class:selected={action === 'COMMENT'}>
           <input type="radio" bind:group={action} value="COMMENT" />
@@ -128,7 +131,7 @@
       >
         {submitLabel}
       </button>
-      {#if !merged}
+      {#if !merged && hasWriteAccess}
         {#if prState !== 'closed'}
           <button
             class="btn btn-land"

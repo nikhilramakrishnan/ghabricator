@@ -34,15 +34,16 @@ type APILabel struct {
 // --- PR Detail API types ---
 
 type APIPRDetailResponse struct {
-	PR             APIPRDetail                    `json:"pr"`
-	Changesets     []APIChangeset                 `json:"changesets"`
-	CommentsByPath map[string][]APIReviewComment  `json:"commentsByPath"`
-	Reviews        []APIReview                    `json:"reviews"`
-	IssueComments  []APIIssueComment              `json:"issueComments"`
-	CheckRuns      []APICheckRun                  `json:"checkRuns"`
-	Timeline       []APITimelineEvent             `json:"timeline"`
-	HeraldMatches  []APIHeraldMatch               `json:"heraldMatches,omitempty"`
-	Commits        []APICommit                    `json:"commits"`
+	PR               APIPRDetail                    `json:"pr"`
+	Changesets       []APIChangeset                 `json:"changesets"`
+	CommentsByPath   map[string][]APIReviewComment  `json:"commentsByPath"`
+	Reviews          []APIReview                    `json:"reviews"`
+	IssueComments    []APIIssueComment              `json:"issueComments"`
+	CheckRuns        []APICheckRun                  `json:"checkRuns"`
+	Timeline         []APITimelineEvent             `json:"timeline"`
+	HeraldMatches    []APIHeraldMatch               `json:"heraldMatches,omitempty"`
+	Commits          []APICommit                    `json:"commits"`
+	ViewerPermission string                         `json:"viewerPermission"`
 }
 
 type APICommit struct {

@@ -428,14 +428,15 @@ func (s *Server) handleAPIPR(w http.ResponseWriter, r *http.Request) {
 			Deletions:    pr.Deletions,
 			ChangedFiles: pr.ChangedFiles,
 		},
-		Changesets:     apiChangesets,
-		CommentsByPath: apiCommentsByPath,
-		Reviews:        apiReviews,
-		IssueComments:  apiIssueComments,
-		CheckRuns:      apiCheckRuns,
-		Timeline:       apiTimeline,
-		HeraldMatches:  apiHeraldMatches,
-		Commits:        apiCommits,
+		Changesets:       apiChangesets,
+		CommentsByPath:   apiCommentsByPath,
+		Reviews:          apiReviews,
+		IssueComments:    apiIssueComments,
+		CheckRuns:        apiCheckRuns,
+		Timeline:         apiTimeline,
+		HeraldMatches:    apiHeraldMatches,
+		Commits:          apiCommits,
+		ViewerPermission: gqlResult.ViewerPermission,
 	}
 
 	jsonOK(w, resp)
